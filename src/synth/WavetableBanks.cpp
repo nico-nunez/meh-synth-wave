@@ -10,7 +10,7 @@ namespace synth::wavetable::banks {
 // ================================
 static constexpr uint8_t MAX_REGISTRY_BANKS = 32;
 static WavetableBank *s_registry[MAX_REGISTRY_BANKS] = {};
-static int s_registryCount = 0;
+static uint8_t s_registryCount = 0;
 
 void registerBank(WavetableBank *bank) {
   if (!bank) {
@@ -23,6 +23,8 @@ void registerBank(WavetableBank *bank) {
   }
   s_registry[s_registryCount++] = bank;
 }
+
+// TODO(nico-nunez): do I need a deregisterBank
 
 WavetableBank *getBankByName(const char *name) {
   for (int i = 0; i < s_registryCount; i++) {

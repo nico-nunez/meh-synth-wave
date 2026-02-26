@@ -48,6 +48,6 @@ uint32_t xorshift32() {
 
 float randNoiseValue() {
   return static_cast<float>(static_cast<int32_t>(xorshift32())) *
-         2.32830644e-10f; // float → [-1, 1]
+         4.6566129e-10f; // float → [-1, 1]
 }
 } // namespace dsp::math

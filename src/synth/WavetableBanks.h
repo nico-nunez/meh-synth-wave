@@ -1,9 +1,11 @@
 #pragma once
 
-#include "dsp/WaveTable.h"
+#include "dsp/Wavetable.h"
 
 namespace synth::wavetable::banks {
 using WavetableBank = dsp::wavetable::WavetableBank;
+
+void initFactoryBanks();
 
 void registerBank(WavetableBank *bank);
 

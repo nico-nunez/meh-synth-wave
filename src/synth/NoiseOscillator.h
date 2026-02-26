@@ -28,6 +28,5 @@ struct NoiseOscillator {
 float processNoise(NoiseOscillator &noise);
 // Returns noise in [-1, 1] scaled by mixLevel.
 // White: flat spectrum. Pink: -3dB/octave via Kellet approximation.
-// Uses xorshift32 PRNG — do not use std::rand().
 
 } // namespace synth::noise_osc

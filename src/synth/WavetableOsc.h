@@ -31,12 +31,8 @@ struct WavetableOscConfig {
 
 struct WavetableOscillator {
   // ==== Per-voice hot data (SoA) ====
-
-  // fixed-point: upper 11 bits = index, lower 21 = fraction
-  uint32_t phases[MAX_VOICES];
-
-  // table-space increment/step
-  float phaseIncrements[MAX_VOICES];
+  float phases[MAX_VOICES];          // normalized [0, 1.0)
+  float phaseIncrements[MAX_VOICES]; // cycles per sample (freq / sampleRate)
 
   // ==== Global settings for all voices in oscillator ====
   const WavetableBank *bank = nullptr;
@@ -55,17 +51,23 @@ void initOscillator(WavetableOscillator &osc, uint32_t voiceIndex,
 void updateConfig(WavetableOscillator &osc, const WavetableOscConfig &config);
 
 /* Read one sample with dual-mip linear interpolation.
- * mipF: continuous mip level from selectMipLevel() — fractional part
- *       drives mip crossfade.
- * effectiveScanPos: base scanPosition + mod delta, clamped [0,1] by caller.
- * fmPhaseOffset: fixed-point phase displacement from FM (0 = no FM).
+ * mipF: continuous mip level from selectMipLevel() — fractional part drives mip
+ * crossfade. effectiveScanPos: base scanPosition + mod delta, clamped [0,1] by
+ * caller.
+ *
+ * fmPhaseOffset: phase displacement from FM in cycles (0.0 = no FM). Any
+ * magnitude, any sign — wrapping is handled internally via floorf. This is why
+ * phases are normalized.
  */
 float readWavetable(const WavetableOscillator &osc, uint32_t voiceIndex,
-                    float mipF, float effectiveScanPos, uint32_t fmPhaseOffset);
+                    float mipF, float effectiveScanPos, float fmPhaseOffset);
 
 /* Returns a continuous float mip level for the given phase increment.
- * Fractional part is the blend weight between mip floor and ceiling.
- * Call per-sample from the interpolated pitch increment — not just at note-on.
+ * phaseIncrement must be in TABLE_SIZE units (table positions/sample):
+ * pass osc.phaseIncrements[v] * TABLE_SIZE_F  (or the interpolated
+ * equivalent) Fractional part is the blend weight between mip floor and
+ * ceiling. Call per-sample from the interpolated pitch increment — not just at
+ * note-on.
  */
 float selectMipLevel(float phaseIncrement);
 
