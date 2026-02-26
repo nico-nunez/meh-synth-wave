@@ -22,6 +22,14 @@
 - Exception: Documentation and reference materials can be created/updated when asked
 - **"Plan" means a doc** - When asked to "make a plan" or "create a plan", write a planning document in `_docs_/` (or update the roadmap). Do NOT enter plan mode.
 
+## Documentation Philosophy
+**Docs describe production-quality solutions, not the current state of the code.**
+
+- If the current implementation falls short of what a production synthesizer requires, **say so explicitly** — mark it `ASPIRATIONAL`, `CODE FIX`, or `ARCHITECTURAL GAP` as appropriate, and describe what correct looks like.
+- Never route around a known architectural deficiency in a doc just because fixing it seems out of scope. Workarounds hidden in docs become hidden debt. Call them out so an informed decision can be made.
+- The goal of the documentation phase is that when implementation begins, the full picture is visible: what to build, what already exists, and what existing code needs to change. Omitting the third item defeats the purpose.
+- Validating architecture against external references (Vital source, published DSP techniques) is a requirement, not optional. "Seems right" is not good enough.
+
 ## Documentation Style
 Reference docs in `_docs_/` (note the underscores) should be:
 - **Concise and to the point** - no excessive filler

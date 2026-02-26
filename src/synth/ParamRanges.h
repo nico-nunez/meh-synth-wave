@@ -17,6 +17,10 @@ inline constexpr float DETUNE_MIN = -100.0f; // cents
 inline constexpr float DETUNE_MAX = 100.0f;
 inline constexpr int8_t OCTAVE_MIN = -2;
 inline constexpr int8_t OCTAVE_MAX = 2;
+inline constexpr uint8_t FM_SOURCE_MIN = 0;
+inline constexpr uint8_t FM_SOURCE_MAX = 4;
+inline constexpr float FM_DEPTH_MIN = 0.0f;
+inline constexpr float FM_DEPTH_MAX = 5.0f;
 
 float clampMixLevel(float mixLevel);
 float clampDetune(float detuneAmount);
