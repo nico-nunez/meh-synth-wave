@@ -1,5 +1,7 @@
 #include "dsp/Math.h"
+#include "dsp/Wavetable.h"
 
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 
@@ -50,4 +52,10 @@ float randNoiseValue() {
   return static_cast<float>(static_cast<int32_t>(xorshift32())) *
          4.6566129e-10f; // float → [-1, 1]
 }
+
+float sineAt(int harmonic, int sampleIndex) {
+  return sinf(dsp::math::TWO_PI_F * static_cast<float>(harmonic) *
+              static_cast<float>(sampleIndex) / wavetable::TABLE_SIZE_F);
+}
+
 } // namespace dsp::math

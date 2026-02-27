@@ -4,7 +4,11 @@
 namespace dsp::math {
 
 inline constexpr float PI_F = 3.1415927f;
+inline constexpr float INV_PI_F = 1.0f / 3.1415927f;
+
 inline constexpr double PI_DOUBLE = 3.141592653589793;
+inline constexpr double INV_PI_DOUBLE = 3.141592653589793;
+
 inline constexpr float TWO_PI_F = 2 * PI_F;
 
 inline constexpr float SEMITONE_PER_OCTAVE = 1.0f / 12.0f;
