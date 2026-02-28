@@ -121,4 +121,16 @@ float readWavetable(const WavetableOscillator &osc, uint32_t voiceIndex,
   return sA + mFrac * (sB - sA);           // mip lerp
 }
 
+float processOscillator(WavetableOscillator &osc, uint32_t voiceIndex,
+                        float mipF, float effectiveScanPos, float fmPhaseOffset,
+                        float pitchIncrement) {
+  float sample =
+      readWavetable(osc, voiceIndex, mipF, effectiveScanPos, fmPhaseOffset);
+
+  osc.phases[voiceIndex] += pitchIncrement;
+  osc.phases[voiceIndex] -= floorf(osc.phases[voiceIndex]);
+
+  return sample;
+}
+
 } // namespace synth::wavetable::osc

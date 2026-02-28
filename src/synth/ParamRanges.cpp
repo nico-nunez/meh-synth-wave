@@ -14,6 +14,13 @@ float clampDetune(float detuneAmount) {
 float clampOctave(int8_t octaveOffset) {
   return std::clamp(octaveOffset, OCTAVE_MIN, OCTAVE_MAX);
 }
+
+namespace noise {
+float clampMixLevel(float mixLevel) {
+  return std::clamp(mixLevel, MIX_LEVEL_MIN, MIX_LEVEL_MAX);
+}
+} // namespace noise
+
 } // namespace osc
 
 // Envelope Param Helpers

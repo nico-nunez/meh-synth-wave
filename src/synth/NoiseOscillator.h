@@ -10,13 +10,13 @@ enum class NoiseType : uint8_t {
 
 struct NoiseOscConfig {
   float mixLevel = 0.0f;
-  NoiseType noiseType = NoiseType::White;
+  NoiseType type = NoiseType::White;
   bool enabled = false;
 };
 
 struct NoiseOscillator {
   float mixLevel = 0.0f;
-  NoiseType noiseType = NoiseType::White;
+  NoiseType type = NoiseType::White;
   bool enabled = false;
 
   // Pink noise filter state (Kellet 3-stage IIR)
@@ -24,6 +24,8 @@ struct NoiseOscillator {
   float b1 = 0.0f;
   float b2 = 0.0f;
 };
+
+void updateConfig(NoiseOscillator &noiseOsc, const NoiseOscConfig &config);
 
 float processNoise(NoiseOscillator &noise);
 // Returns noise in [-1, 1] scaled by mixLevel.

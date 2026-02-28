@@ -1,26 +1,28 @@
 #pragma once
 
 #include "synth/Filters.h"
-#include "synth/Oscillator.h"
 #include <cstdint>
 
 namespace synth::param::ranges {
-using WaveformType = oscillator::WaveformType;
 
 namespace osc {
-inline constexpr uint8_t WAVEFORM_MIN = 0;
-inline constexpr uint8_t WAVEFORM_MAX =
-    static_cast<uint8_t>(WaveformType::WAVEFORM_COUNT) - 1;
 inline constexpr float MIX_LEVEL_MIN = 0.0f;
 inline constexpr float MIX_LEVEL_MAX = 4.0f;
 inline constexpr float DETUNE_MIN = -100.0f; // cents
 inline constexpr float DETUNE_MAX = 100.0f;
 inline constexpr int8_t OCTAVE_MIN = -2;
 inline constexpr int8_t OCTAVE_MAX = 2;
-inline constexpr uint8_t FM_SOURCE_MIN = 0;
-inline constexpr uint8_t FM_SOURCE_MAX = 4;
 inline constexpr float FM_DEPTH_MIN = 0.0f;
 inline constexpr float FM_DEPTH_MAX = 5.0f;
+inline constexpr float SCAN_POS_MIN = 0.0f;
+inline constexpr float SCAN_POS_MAX = 1.0f;
+
+namespace noise {
+inline constexpr float MIX_LEVEL_MIN = 0.0f;
+inline constexpr float MIX_LEVEL_MAX = 1.0f;
+
+float clampMixLevel(float mixLevel);
+} // namespace noise
 
 float clampMixLevel(float mixLevel);
 float clampDetune(float detuneAmount);

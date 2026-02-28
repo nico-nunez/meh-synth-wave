@@ -2,7 +2,10 @@
 
 #include "synth/Engine.h"
 #include "synth/ModMatrix.h"
+#include "synth/NoiseOscillator.h"
 #include "synth/ParamBindings.h"
+#include "synth/WavetableBanks.h"
+#include "synth/WavetableOsc.h"
 
 #include "synth_io/SynthIO.h"
 
@@ -25,11 +28,9 @@ namespace pb = param::bindings;
 namespace {
 
 // Parse input string and update param value
-int setInputParam(std::istringstream &iss, s_io::hSynthSession session) {
-  std::string paramName;
+int setInputParam(const std::string &paramName, std::istringstream &iss,
+                  s_io::hSynthSession session) {
   float paramValue;
-
-  iss >> paramName;
 
   pb::ParamMapping param = pb::findParamByName(paramName.c_str());
   if (param.id == param::bindings::PARAM_COUNT) {
@@ -37,17 +38,7 @@ int setInputParam(std::istringstream &iss, s_io::hSynthSession session) {
     return 1;
   }
 
-  // Check if param is setting waveformType (string)
   switch (param.type) {
-  // Set Oscillator Waveform
-  case pb::ParamValueType::WAVEFORM: {
-    std::string value;
-    iss >> value;
-
-    auto waveformType = pb::getWaveformType(value.c_str());
-    paramValue = static_cast<float>(waveformType);
-
-  } break;
 
   // Enable/Disable Item
   case pb::ParamValueType::BOOL: {
@@ -86,6 +77,26 @@ int setInputParam(std::istringstream &iss, s_io::hSynthSession session) {
   return 0;
 }
 
+using FMSource = wavetable::osc::FMSource;
+FMSource parseFMSource(const char *s) {
+  if (strcasecmp(s, "osc1") == 0)
+    return FMSource::Osc1;
+  if (strcasecmp(s, "osc2") == 0)
+    return FMSource::Osc2;
+  if (strcasecmp(s, "osc3") == 0)
+    return FMSource::Osc3;
+  if (strcasecmp(s, "sub") == 0)
+    return FMSource::Sub;
+  return FMSource::None;
+}
+
+using NoiseType = noise_osc::NoiseType;
+NoiseType parseNoiseType(const char *s) {
+  if (strcasecmp(s, "pink") == 0)
+    return noise_osc::NoiseType::Pink;
+  return noise_osc::NoiseType::White;
+}
+
 } // namespace
 
 void parseCommand(const std::string &line, Engine &engine,
@@ -98,8 +109,99 @@ void parseCommand(const std::string &line, Engine &engine,
 
   // SET: set param value (adds ParamEvent to the queue)
   if (cmd == "set") {
+    std::string paramName;
+    iss >> paramName;
 
-    errStatus = setInputParam(iss, session);
+    // Direct-handled params — bypass binding system and event queue
+    if (paramName == "osc1.bank") {
+      std::string value;
+      iss >> value;
+
+      auto *bank = synth::wavetable::banks::getBankByName(value.c_str());
+
+      if (bank)
+        engine.voicePool.osc1.bank = bank;
+      else
+        printf("unknown bank: %s\n", value.c_str());
+
+      return;
+    }
+    if (paramName == "osc2.bank") {
+      std::string value;
+      iss >> value;
+
+      auto *bank = synth::wavetable::banks::getBankByName(value.c_str());
+
+      if (bank)
+        engine.voicePool.osc2.bank = bank;
+      else
+        printf("unknown bank: %s\n", value.c_str());
+
+      return;
+    }
+    if (paramName == "osc3.bank") {
+      std::string value;
+      iss >> value;
+
+      auto *bank = synth::wavetable::banks::getBankByName(value.c_str());
+
+      if (bank)
+        engine.voicePool.osc3.bank = bank;
+      else
+        printf("unknown bank: %s\n", value.c_str());
+
+      return;
+    }
+    if (paramName == "subOsc.bank") {
+      std::string value;
+      iss >> value;
+
+      auto *bank = synth::wavetable::banks::getBankByName(value.c_str());
+
+      if (bank)
+        engine.voicePool.subOsc.bank = bank;
+      else
+        printf("unknown bank: %s\n", value.c_str());
+
+      return;
+    }
+
+    if (paramName == "osc1.fmSource") {
+      std::string value;
+      iss >> value;
+      engine.voicePool.osc1.fmSource = parseFMSource(value.c_str());
+      return;
+    }
+
+    if (paramName == "osc2.fmSource") {
+      std::string value;
+      iss >> value;
+      engine.voicePool.osc2.fmSource = parseFMSource(value.c_str());
+      return;
+    }
+
+    if (paramName == "osc3.fmSource") {
+      std::string value;
+      iss >> value;
+      engine.voicePool.osc3.fmSource = parseFMSource(value.c_str());
+      return;
+    }
+
+    if (paramName == "subOsc.fmSource") {
+      std::string value;
+      iss >> value;
+      engine.voicePool.subOsc.fmSource = parseFMSource(value.c_str());
+      return;
+    }
+
+    if (paramName == "noiseOsc.type") {
+      std::string value;
+      iss >> value;
+      engine.voicePool.noiseOsc.type = parseNoiseType(value.c_str());
+      return;
+    }
+
+    errStatus = setInputParam(paramName, iss, session);
     if (!errStatus)
       printf("OK\n");
 

@@ -2,33 +2,32 @@
 
 #include "Envelope.h"
 #include "Filters.h"
-#include "Oscillator.h"
+#include "ModMatrix.h"
+#include "NoiseOscillator.h"
 #include "Types.h"
-
-#include "dsp/Waveforms.h"
-#include "synth/ModMatrix.h"
+#include "WavetableOsc.h"
 
 #include <cstddef>
 #include <cstdint>
 
 namespace synth::voices {
-using WaveformType = dsp::waveforms::WaveformType;
-
 using Envelope = envelope::Envelope;
 
-using OscConfig = oscillator::OscConfig;
-using Oscillator = oscillator::Oscillator;
+using WavetableOsc = wavetable::osc::WavetableOscillator;
+using WavetableOscConfig = wavetable::osc::WavetableOscConfig;
+
+using NoiseOsc = noise_osc::NoiseOscillator;
+using NoiseOscConfig = noise_osc::NoiseOscConfig;
 
 using ModMatrix = mod_matrix::ModMatrix;
 
-static constexpr OscConfig SUB_OSC_DEFAULT = {WaveformType::Sine, 0.5f, -2,
-                                              0.0f, true};
-
 struct VoicePoolConfig {
-  OscConfig osc1{};
-  OscConfig osc2{};
-  OscConfig osc3{};
-  OscConfig subOsc{SUB_OSC_DEFAULT};
+  WavetableOscConfig osc1{};
+  WavetableOscConfig osc2{};
+  WavetableOscConfig osc3{};
+  WavetableOscConfig subOsc{};
+
+  NoiseOscConfig noiseOsc{};
 
   float masterGain = 1.0f;
   float sampleRate = 48000.0f;
@@ -37,10 +36,12 @@ struct VoicePoolConfig {
 // VoicePool - top-level container (universal synth)
 struct VoicePool {
   // ==== Oscillators (3 main + sub oscillator) ====
-  Oscillator osc1;
-  Oscillator osc2;
-  Oscillator osc3;
-  Oscillator subOsc = oscillator::createOscillator(SUB_OSC_DEFAULT);
+  WavetableOsc osc1;
+  WavetableOsc osc2;
+  WavetableOsc osc3;
+  WavetableOsc subOsc;
+
+  NoiseOsc noiseOsc;
 
   // Reduce gain for multiple oscillators
   // TODO(nico): this needs to be tide to number of active oscs
@@ -86,6 +87,9 @@ struct VoicePool {
   uint32_t activeCount = 0;
   uint32_t activeIndices[MAX_VOICES]; // Dense array of active indices
 };
+
+// Initialize VoicePool (once upon engin creation)
+void initVoicePool(VoicePool &pool, const VoicePoolConfig &config);
 
 // updating existing Engine member
 void updateVoicePoolConfig(VoicePool &pool, const VoicePoolConfig &config);

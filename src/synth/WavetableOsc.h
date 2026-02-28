@@ -71,4 +71,9 @@ float readWavetable(const WavetableOscillator &osc, uint32_t voiceIndex,
  */
 float selectMipLevel(float phaseIncrement);
 
+// Process oscillator (read table and increment phase)
+float processOscillator(WavetableOscillator &osc, uint32_t voiceIndex,
+                        float mipF, float effectiveScanPos, float fmPhaseOffset,
+                        float pitchIncrement);
+
 } // namespace synth::wavetable::osc

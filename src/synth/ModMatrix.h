@@ -50,6 +50,18 @@ enum ModDest {
   Osc3Mix,
   SubOscMix,
 
+  // Wavetable scan position — 0.0–1.0 offset
+  Osc1ScanPos,
+  Osc2ScanPos,
+  Osc3ScanPos,
+  SubOscScanPos,
+
+  // FM depth modulation — DX7-style "envelope controls FM intensity"
+  Osc1FMDepth,
+  Osc2FMDepth,
+  Osc3FMDepth,
+  SubOscFMDepth,
+
   DEST_COUNT // used to size arrays, not a valid dest
 };
 
@@ -139,6 +151,18 @@ inline constexpr ModDestMapping
         {"osc2.mixLevel", ModDest::Osc2Mix},
         {"osc3.mixLevel", ModDest::Osc3Mix},
         {"subOsc.mixLevel", ModDest::SubOscMix},
+
+        // Oscillator Scan Position
+        {"osc1.scanPos", ModDest::Osc1ScanPos},
+        {"osc2.scanPos", ModDest::Osc2ScanPos},
+        {"osc3.scanPos", ModDest::Osc3ScanPos},
+        {"subOsc.scanPos", ModDest::SubOscScanPos},
+
+        // Oscillator FM Depth
+        {"osc1.fmDepth", ModDest::Osc1FMDepth},
+        {"osc2.fmDepth", ModDest::Osc2FMDepth},
+        {"osc3.fmDepth", ModDest::Osc3FMDepth},
+        {"subOsc.fmDepth", ModDest::SubOscFMDepth},
 };
 
 void parseModCommand(std::istringstream &iss, ModMatrix &modMatrix);

@@ -2,13 +2,20 @@
 #include "dsp/Math.h"
 
 namespace synth::noise_osc {
+
+void updateConfig(NoiseOscillator &osc, const NoiseOscConfig &config) {
+  osc.type = config.type;
+  osc.mixLevel = config.mixLevel;
+  osc.enabled = config.enabled;
+}
+
 float processNoise(NoiseOscillator &noise) {
   if (!noise.enabled)
     return 0.0f;
 
   float noiseValue = dsp::math::randNoiseValue(); // -> [-1, 1]
 
-  if (noise.noiseType == NoiseType::White)
+  if (noise.type == NoiseType::White)
     return noiseValue * noise.mixLevel;
 
   // Paul Kellet pink noise approximation

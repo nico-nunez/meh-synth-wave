@@ -1,13 +1,11 @@
 #include "VoicePool.h"
-#include "Envelope.h"
-#include "Oscillator.h"
-#include "Types.h"
 
-#include "synth/Filters.h"
-#include "synth/ModMatrix.h"
+#include "synth/NoiseOscillator.h"
+#include "synth/WavetableBanks.h"
 
 #include "dsp/Effects.h"
 #include "dsp/Math.h"
+#include "synth/WavetableOsc.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -18,6 +16,8 @@ using ModDest = mod_matrix::ModDest;
 using ModDest2D = mod_matrix::ModDest2D;
 using ModRoute = mod_matrix::ModRoute;
 
+namespace osc = wavetable::osc;
+
 // =========================
 // VoicePool Configuration
 // =========================
@@ -27,10 +27,17 @@ void updateVoicePoolConfig(VoicePool &pool, const VoicePoolConfig &config) {
 
   pool.masterGain = config.masterGain;
 
-  oscillator::updateConfig(pool.osc1, config.osc1);
-  oscillator::updateConfig(pool.osc2, config.osc2);
-  oscillator::updateConfig(pool.osc3, config.osc3);
-  oscillator::updateConfig(pool.subOsc, config.subOsc);
+  osc::updateConfig(pool.osc1, config.osc1);
+  osc::updateConfig(pool.osc2, config.osc2);
+  osc::updateConfig(pool.osc3, config.osc3);
+  osc::updateConfig(pool.subOsc, config.subOsc);
+
+  noise_osc::updateConfig(pool.noiseOsc, config.noiseOsc);
+
+  int enabledCount = pool.osc1.enabled + pool.osc2.enabled + pool.osc3.enabled +
+                     pool.subOsc.enabled + pool.noiseOsc.enabled;
+  pool.oscMixGain =
+      (enabledCount > 0) ? 1.0f / static_cast<float>(enabledCount) : 1.0f;
 
   filters::updateSVFCoefficients(pool.svf, pool.invSampleRate);
   filters::updateLadderCoefficient(pool.ladder, pool.invSampleRate);
@@ -39,6 +46,29 @@ void updateVoicePoolConfig(VoicePool &pool, const VoicePoolConfig &config) {
                        0.0f);
   mod_matrix::addRoute(pool.modMatrix, ModSrc::FilterEnv, ModDest::LadderCutoff,
                        0.0f);
+}
+
+void initVoicePool(VoicePool &pool, const VoicePoolConfig &config) {
+  using namespace wavetable::banks;
+  initFactoryBanks();
+
+  updateVoicePoolConfig(pool, config);
+
+  // TODO(nico-nunez): find a better way!!!
+  pool.osc1.bank = getBankByID(BankID::Saw);
+  pool.osc1.detuneAmount = 10.0f;
+
+  pool.osc2.bank = getBankByID(BankID::Saw);
+  pool.osc2.mixLevel = 0.7f;
+  pool.osc2.octaveOffset = -1;
+  pool.osc2.detuneAmount = -10.0f;
+
+  pool.osc3.bank = getBankByID(BankID::Sine);
+  pool.osc3.mixLevel = 0.5f;
+
+  pool.subOsc.bank = getBankByID(BankID::Sine);
+  pool.subOsc.octaveOffset = -2;
+  pool.subOsc.mixLevel = 0.5f;
 }
 
 // =========================
@@ -135,16 +165,16 @@ void initializeVoice(VoicePool &pool, uint32_t voiceIndex, uint8_t midiNote,
   }
 
   // ==== Initialize Oscillator 1 ====
-  oscillator::initOscillator(pool.osc1, voiceIndex, midiNote, sampleRate);
+  osc::initOscillator(pool.osc1, voiceIndex, midiNote, sampleRate);
 
   // ==== Initialize Oscillator 2 ====
-  oscillator::initOscillator(pool.osc2, voiceIndex, midiNote, sampleRate);
+  osc::initOscillator(pool.osc2, voiceIndex, midiNote, sampleRate);
 
   // ==== Initialize Oscillator 3 ====
-  oscillator::initOscillator(pool.osc3, voiceIndex, midiNote, sampleRate);
+  osc::initOscillator(pool.osc3, voiceIndex, midiNote, sampleRate);
 
   // ==== Initialize Sub Oscillator ====
-  oscillator::initOscillator(pool.subOsc, voiceIndex, midiNote, sampleRate);
+  osc::initOscillator(pool.subOsc, voiceIndex, midiNote, sampleRate);
 
   // ==== Initialize Envelopes ====
   // Amp envelope
@@ -187,6 +217,9 @@ void handleNoteOn(VoicePool &pool, uint8_t midiNote, float velocity,
 // ===========================
 
 namespace {
+namespace osc = wavetable::osc;
+namespace dsp_wt = dsp::wavetable;
+
 // ==== <Processing Helpers> ====
 
 /* ==== Pre-pass: once per block, once per active voice ====
@@ -246,7 +279,7 @@ void preProcessBlock(VoicePool &pool, size_t numSamples) {
 };
 
 // Calculate interpolation for pitch increment (hot-loop)
-float interpolatePitchInc(Oscillator &osc, ModMatrix &matrix, ModDest dest,
+float interpolatePitchInc(WavetableOsc &osc, ModMatrix &matrix, ModDest dest,
                           uint32_t voiceIndex, uint32_t sampleIndex) {
   // Calculate pitch modulation
   float pitchMod = matrix.prevDestValues[dest][voiceIndex] +
@@ -261,41 +294,74 @@ float interpolatePitchInc(Oscillator &osc, ModMatrix &matrix, ModDest dest,
 // Process Oscillators with interpolation and mix (sum) values
 float processAndMixOscillators(VoicePool &pool, uint32_t voiceIndex,
                                uint32_t sampleIndex) {
-  // Oscillator 1
-  float osc1PhaseInc = interpolatePitchInc(
+
+  // ==== Pitch: per-sample interpolation ====
+  float pitchInc1 = interpolatePitchInc(
       pool.osc1, pool.modMatrix, ModDest::Osc1Pitch, voiceIndex, sampleIndex);
-  float osc1MixLevel = pool.osc1.mixLevel +
-                       pool.modMatrix.destValues[ModDest::Osc1Mix][voiceIndex];
-  float osc1 = oscillator::processOscillator(pool.osc1, voiceIndex,
-                                             osc1PhaseInc, osc1MixLevel);
-
-  // Oscillator 2
-  float osc2PhaseInc = interpolatePitchInc(
+  float pitchInc2 = interpolatePitchInc(
       pool.osc2, pool.modMatrix, ModDest::Osc2Pitch, voiceIndex, sampleIndex);
-  float osc2MixLevel = pool.osc2.mixLevel +
-                       pool.modMatrix.destValues[ModDest::Osc2Mix][voiceIndex];
-  float osc2 = oscillator::processOscillator(pool.osc2, voiceIndex,
-                                             osc2PhaseInc, osc2MixLevel);
-
-  // Oscillator 3
-  float osc3PhaseInc = interpolatePitchInc(
+  float pitchInc3 = interpolatePitchInc(
       pool.osc3, pool.modMatrix, ModDest::Osc3Pitch, voiceIndex, sampleIndex);
-  float osc3MixLevel = pool.osc3.mixLevel +
-                       pool.modMatrix.destValues[ModDest::Osc3Mix][voiceIndex];
-  float osc3 = oscillator::processOscillator(pool.osc3, voiceIndex,
-                                             osc3PhaseInc, osc3MixLevel);
-
-  // Sub Oscillator
-  float subOscPhaseInc =
+  float pitchIncSub =
       interpolatePitchInc(pool.subOsc, pool.modMatrix, ModDest::SubOscPitch,
                           voiceIndex, sampleIndex);
-  float subOscMixLevel =
-      pool.subOsc.mixLevel +
-      pool.modMatrix.destValues[ModDest::SubOscMix][voiceIndex];
-  float subOsc = oscillator::processOscillator(pool.subOsc, voiceIndex,
-                                               subOscPhaseInc, subOscMixLevel);
 
-  return (osc1 + osc2 + osc3 + subOsc) * pool.oscMixGain;
+  // ==== Mip level - per-sample from interpolated pitch ====
+  float mip1 = osc::selectMipLevel(pitchInc1 * dsp_wt::TABLE_SIZE_F);
+  float mip2 = osc::selectMipLevel(pitchInc2 * dsp_wt::TABLE_SIZE_F);
+  float mip3 = osc::selectMipLevel(pitchInc3 * dsp_wt::TABLE_SIZE_F);
+  float mipSub = osc::selectMipLevel(pitchIncSub * dsp_wt::TABLE_SIZE_F);
+
+  // ==== Scan position ====
+  float scan1 = std::clamp(
+      pool.osc1.scanPosition +
+          pool.modMatrix.destValues[ModDest::Osc1ScanPos][voiceIndex],
+      0.0f, 1.0f);
+  float scan2 = std::clamp(
+      pool.osc2.scanPosition +
+          pool.modMatrix.destValues[ModDest::Osc2ScanPos][voiceIndex],
+      0.0f, 1.0f);
+  float scan3 = std::clamp(
+      pool.osc3.scanPosition +
+          pool.modMatrix.destValues[ModDest::Osc3ScanPos][voiceIndex],
+      0.0f, 1.0f);
+  float scanSub = std::clamp(
+      pool.subOsc.scanPosition +
+          pool.modMatrix.destValues[ModDest::SubOscScanPos][voiceIndex],
+      0.0f, 1.0f);
+
+  // ==== Read oscillators — fmPhaseOffset = 0.0f until Step 6 ====
+  float out1 = osc::processOscillator(pool.osc1, voiceIndex, mip1, scan1, 0.0f,
+                                      pitchInc1);
+  float out2 = osc::processOscillator(pool.osc2, voiceIndex, mip2, scan2, 0.0f,
+                                      pitchInc2);
+  float out3 = osc::processOscillator(pool.osc3, voiceIndex, mip3, scan3, 0.0f,
+                                      pitchInc3);
+  float outSub = osc::processOscillator(pool.subOsc, voiceIndex, mipSub,
+                                        scanSub, 0.0f, pitchIncSub);
+
+  // === Mix levels — base + mod delta, clamped ≥ 0 ===
+  // Block-rate values; negative mix makes no sense so clamp at 0
+  float mix1 = std::max(
+      0.0f, pool.osc1.mixLevel +
+                pool.modMatrix.destValues[ModDest::Osc1Mix][voiceIndex]);
+  float mix2 = std::max(
+      0.0f, pool.osc2.mixLevel +
+                pool.modMatrix.destValues[ModDest::Osc2Mix][voiceIndex]);
+  float mix3 = std::max(
+      0.0f, pool.osc3.mixLevel +
+                pool.modMatrix.destValues[ModDest::Osc3Mix][voiceIndex]);
+  float mixS = std::max(
+      0.0f, pool.subOsc.mixLevel +
+                pool.modMatrix.destValues[ModDest::SubOscMix][voiceIndex]);
+
+  // ==== Noise — applies mixLevel internally ====
+  float noiseOut = noise_osc::processNoise(pool.noiseOsc);
+
+  return (out1 * mix1 + out2 * mix2 + out3 * mix3 + outSub * mixS +
+          noiseOut) // no separate mix multiplier — already scaled inside
+                    // processNoise
+         * pool.oscMixGain;
 }
 
 /* ==== Post-block: Update prevDestValues with current value ====

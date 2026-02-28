@@ -1,7 +1,7 @@
 #pragma once
 
 #include "synth/Filters.h"
-#include "synth/Oscillator.h"
+
 #include <cstddef>
 
 namespace synth {
@@ -10,36 +10,43 @@ struct Engine;
 
 namespace synth::param::bindings {
 using SVFMode = filters::SVFMode;
-using WaveformType = oscillator::WaveformType;
 
 enum ParamID {
   // Oscillator 1
-  OSC1_WAVEFORM,
   OSC1_MIX_LEVEL,
   OSC1_DETUNE_AMOUNT,
   OSC1_OCTAVE_OFFSET,
+  OSC1_SCAN_POS,
+  OSC1_FM_DEPTH,
   OSC1_ENABLED,
 
   // Oscillator 2
-  OSC2_WAVEFORM,
   OSC2_MIX_LEVEL,
   OSC2_DETUNE_AMOUNT,
   OSC2_OCTAVE_OFFSET,
+  OSC2_SCAN_POS,
+  OSC2_FM_DEPTH,
   OSC2_ENABLED,
 
   // Oscillator 3
-  OSC3_WAVEFORM,
   OSC3_MIX_LEVEL,
   OSC3_DETUNE_AMOUNT,
   OSC3_OCTAVE_OFFSET,
+  OSC3_SCAN_POS,
+  OSC3_FM_DEPTH,
   OSC3_ENABLED,
 
   // Sub Oscillator
-  SUB_OSC_WAVEFORM,
   SUB_OSC_MIX_LEVEL,
   SUB_OSC_DETUNE_AMOUNT,
   SUB_OSC_OCTAVE_OFFSET,
+  SUB_OSC_SCAN_POS,
+  SUB_OSC_FM_DEPTH,
   SUB_OSC_ENABLED,
+
+  // Noise Oscillator
+  NOISE_OSC_MIX_LEVEL,
+  NOISE_OSC_ENABLED,
 
   // Amp Envelope
   AMP_ENV_ATTACK,
@@ -75,7 +82,7 @@ enum ParamValueFormat {
   DENORMALIZED,
 };
 
-enum ParamValueType { FLOAT, INT8, BOOL, WAVEFORM, FILTER_MODE };
+enum ParamValueType { FLOAT, INT8, BOOL, FILTER_MODE };
 
 struct ParamBinding {
   union {
@@ -83,7 +90,6 @@ struct ParamBinding {
     int8_t *int8Ptr;
     bool *boolPtr;
     SVFMode *svfModePtr;
-    WaveformType *waveformPtr;
   };
   ParamValueType type;
   float min, max;
@@ -98,29 +104,36 @@ struct ParamMapping {
 
 // Used to find input param names
 constexpr ParamMapping PARAM_NAMES[] = {
-    {OSC1_WAVEFORM, "osc1.waveform", ParamValueType::WAVEFORM},
     {OSC1_MIX_LEVEL, "osc1.mixLevel", ParamValueType::FLOAT},
     {OSC1_DETUNE_AMOUNT, "osc1.detune", ParamValueType::FLOAT},
     {OSC1_OCTAVE_OFFSET, "osc1.octave", ParamValueType::INT8},
+    {OSC1_SCAN_POS, "osc1.scanPos", ParamValueType::FLOAT},
+    {OSC1_FM_DEPTH, "osc1.fmDepth", ParamValueType::FLOAT},
     {OSC1_ENABLED, "osc1.enabled", ParamValueType::BOOL},
 
-    {OSC2_WAVEFORM, "osc2.waveform", ParamValueType::WAVEFORM},
     {OSC2_MIX_LEVEL, "osc2.mixLevel", ParamValueType::FLOAT},
     {OSC2_DETUNE_AMOUNT, "osc2.detune", ParamValueType::FLOAT},
     {OSC2_OCTAVE_OFFSET, "osc2.octave", ParamValueType::INT8},
+    {OSC2_SCAN_POS, "osc2.scanPos", ParamValueType::FLOAT},
+    {OSC2_FM_DEPTH, "osc2.fmDepth", ParamValueType::FLOAT},
     {OSC2_ENABLED, "osc2.enabled", ParamValueType::BOOL},
 
-    {OSC3_WAVEFORM, "osc3.waveform", ParamValueType::WAVEFORM},
     {OSC3_MIX_LEVEL, "osc3.mixLevel", ParamValueType::FLOAT},
     {OSC3_DETUNE_AMOUNT, "osc3.detune", ParamValueType::FLOAT},
     {OSC3_OCTAVE_OFFSET, "osc3.octave", ParamValueType::INT8},
+    {OSC3_SCAN_POS, "osc3.scanPos", ParamValueType::FLOAT},
+    {OSC3_FM_DEPTH, "osc3.fmDepth", ParamValueType::FLOAT},
     {OSC3_ENABLED, "osc3.enabled", ParamValueType::BOOL},
 
-    {SUB_OSC_WAVEFORM, "subOsc.waveform", ParamValueType::WAVEFORM},
     {SUB_OSC_MIX_LEVEL, "subOsc.mixLevel", ParamValueType::FLOAT},
     {SUB_OSC_DETUNE_AMOUNT, "subOsc.detune", ParamValueType::FLOAT},
     {SUB_OSC_OCTAVE_OFFSET, "subOsc.octave", ParamValueType::INT8},
+    {SUB_OSC_SCAN_POS, "subOsc.scanPos", ParamValueType::FLOAT},
+    {SUB_OSC_FM_DEPTH, "subOsc.fmDepth", ParamValueType::FLOAT},
     {SUB_OSC_ENABLED, "subOsc.enabled", ParamValueType::BOOL},
+
+    {NOISE_OSC_MIX_LEVEL, "noiseOsc.mixLevel", ParamValueType::FLOAT},
+    {NOISE_OSC_ENABLED, "noiseOsc.enabled", ParamValueType::BOOL},
 
     {AMP_ENV_ATTACK, "ampEnv.attack", ParamValueType::FLOAT},
     {AMP_ENV_DECAY, "ampEnv.decay", ParamValueType::FLOAT},
@@ -171,6 +184,5 @@ const char *getParamName(ParamID id);
 
 // Helpers for dealing with param values that are strings
 SVFMode getSVFModeType(const char *inputValue);
-WaveformType getWaveformType(const char *inputValue);
 
 } // namespace synth::param::bindings

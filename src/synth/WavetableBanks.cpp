@@ -12,41 +12,32 @@ namespace synth::wavetable::banks {
 namespace dsp_wt = dsp::wavetable;
 using WavetableFrame = dsp::wavetable::WavetableFrame;
 
-// ================================
-// Bank registry
-// ================================
-static constexpr uint8_t MAX_REGISTRY_BANKS = 32;
-static WavetableBank *s_registry[MAX_REGISTRY_BANKS] = {};
-static uint8_t s_registryCount = 0;
-
-void registerBank(WavetableBank *bank) {
-  if (!bank) {
-    printf("registerBank: null bank\n");
-    return;
-  }
-  if (s_registryCount >= MAX_REGISTRY_BANKS) {
-    printf("registerBank: registry full\n");
-    return;
-  }
-  s_registry[s_registryCount++] = bank;
-}
-
-// TODO(nico-nunez): do I need a deregisterBank
-
-WavetableBank *getBankByName(const char *name) {
-  for (int i = 0; i < s_registryCount; i++) {
-    if (std::strcmp(s_registry[i]->name, name) == 0)
-      return s_registry[i];
-  }
-  return nullptr;
-}
-
 namespace {
 float invTableSize = 1.0f / dsp_wt::TABLE_SIZE_F;
 
 inline float sineAt(uint32_t harmonic, uint32_t sampleIndex) {
   return sinf(dsp::math::TWO_PI_F * static_cast<float>(harmonic) *
               static_cast<float>(sampleIndex) * invTableSize);
+}
+
+WavetableBank *createSineBank() {
+  WavetableBank *bank = dsp_wt::createWavetableBank(1, "sine");
+  WavetableFrame *frame = &bank->frames[0];
+
+  // Mip Level
+  for (uint32_t mipLevel = 0; mipLevel < dsp_wt::MAX_MIP_LEVELS; mipLevel++) {
+
+    // Sample Level
+    for (uint32_t sampleIndex = 0; sampleIndex < dsp_wt::TABLE_SIZE;
+         sampleIndex++) {
+
+      // Pure sine (1 harmonics)
+      frame->mips[mipLevel][sampleIndex] = sineAt(1, sampleIndex);
+    }
+  }
+
+  registerBank(BankID::Sine, bank);
+  return bank;
 }
 
 WavetableBank *createSawBank() {
@@ -76,7 +67,7 @@ WavetableBank *createSawBank() {
     }
   }
 
-  registerBank(bank);
+  registerBank(BankID::Saw, bank);
   return bank;
 }
 
@@ -105,7 +96,7 @@ WavetableBank *createSquareBank() {
     }
   }
 
-  registerBank(bank);
+  registerBank(BankID::Square, bank);
   return bank;
 }
 
@@ -138,27 +129,7 @@ WavetableBank *createTriangleBank() {
     }
   }
 
-  registerBank(bank);
-  return bank;
-}
-
-WavetableBank *createSineBank() {
-  WavetableBank *bank = dsp_wt::createWavetableBank(1, "sine");
-  WavetableFrame *frame = &bank->frames[0];
-
-  // Mip Level
-  for (uint32_t mipLevel = 0; mipLevel < dsp_wt::MAX_MIP_LEVELS; mipLevel++) {
-
-    // Sample Level
-    for (uint32_t sampleIndex = 0; sampleIndex < dsp_wt::TABLE_SIZE;
-         sampleIndex++) {
-
-      // Pure sine (1 harmonics)
-      frame->mips[mipLevel][sampleIndex] = sineAt(1, sampleIndex);
-    }
-  }
-
-  registerBank(bank);
+  registerBank(BankID::Triangle, bank);
   return bank;
 }
 
@@ -205,12 +176,47 @@ WavetableBank *createSineToSawBank() {
     }
   }
 
-  registerBank(bank);
+  registerBank(BankID::SineToSaw, bank);
   return bank;
 }
 
 } // namespace
 
+// ================================
+// Bank registry
+// ================================
+static constexpr uint8_t MAX_REGISTRY_BANKS = 32;
+static WavetableBank *s_registry[MAX_REGISTRY_BANKS] = {};
+static uint8_t s_registryCount = 0;
+
+void registerBank(BankID id, WavetableBank *bank) {
+  if (!bank) {
+    printf("registerBank: null bank\n");
+    return;
+  }
+  if (s_registryCount >= MAX_REGISTRY_BANKS) {
+    printf("registerBank: registry full\n");
+    return;
+  }
+  s_registry[id] = bank;
+  s_registryCount++;
+}
+
+// TODO(nico-nunez): deregiter is needed once wav importing is implemented
+
+WavetableBank *getBankByID(BankID id) { return s_registry[id]; }
+
+WavetableBank *getBankByName(const char *name) {
+  for (int i = 0; i < s_registryCount; i++) {
+    if (std::strcmp(s_registry[i]->name, name) == 0)
+      return s_registry[i];
+  }
+  return nullptr;
+}
+
+// ================================
+// Bank Initialization
+// ================================
 void initFactoryBanks() {
   createSineBank();
   createSawBank();

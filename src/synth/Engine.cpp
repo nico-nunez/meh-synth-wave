@@ -16,7 +16,7 @@ using ParamEvent = synth_io::ParamEvent;
 Engine createEngine(const EngineConfig &config) {
   Engine engine{};
 
-  voices::updateVoicePoolConfig(engine.voicePool, config);
+  voices::initVoicePool(engine.voicePool, config);
 
   param::bindings::initParamBindings(engine);
 

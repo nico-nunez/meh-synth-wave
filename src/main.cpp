@@ -6,7 +6,6 @@
 #include "synth_io/SynthIO.h"
 
 #include "synth/Engine.h"
-#include "synth/VoicePool.h"
 
 #include <audio_io/AudioIO.h>
 #include <csignal>
@@ -53,22 +52,13 @@ static void getUserInput(synth::Engine &engine,
 int main() {
   constexpr float SAMPLE_RATE = 48000.0f;
 
-  // 1. Setup synth engine
-#if OLD
-  Synth::Engine engine{SAMPLE_RATE, Synth::OscillatorType::Square};
-#else
   using Engine = synth::Engine;
   using EngineConfig = synth::EngineConfig;
 
   EngineConfig engineConfig{};
   engineConfig.sampleRate = SAMPLE_RATE;
-  engineConfig.osc1.waveform = synth::WaveformType::Saw;
-  engineConfig.osc1.detuneAmount = 10.0f;
-  engineConfig.osc2 = {synth::WaveformType::Saw, 0.5f, -1, -10.0f, true};
-  engineConfig.subOsc.mixLevel = 0.7f;
 
   Engine engine = synth::createEngine(engineConfig);
-#endif
 
   // 2. Setup audio_io
   synth_io::SessionConfig sessionConfig{};
@@ -78,9 +68,7 @@ int main() {
   sessionCallbacks.processAudioBlock = processAudioBlock;
   sessionCallbacks.processNoteEvent = processNoteEvent;
 
-#if !OLD
   sessionCallbacks.processParamEvent = processParamEvent;
-#endif
 
   synth_io::hSynthSession session =
       synth_io::initSession(sessionConfig, sessionCallbacks, &engine);

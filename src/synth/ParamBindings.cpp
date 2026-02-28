@@ -41,15 +41,6 @@ ParamBinding makeParamBinding(float *ptr, float min, float max) {
   return binding;
 }
 
-ParamBinding makeParamBinding(WaveformType *ptr, int min, int max) {
-  ParamBinding binding;
-  binding.waveformPtr = ptr;
-  binding.type = WAVEFORM;
-  binding.min = static_cast<float>(min);
-  binding.max = static_cast<float>(max);
-  return binding;
-}
-
 ParamBinding makeParamBinding(SVFMode *ptr, int min, int max) {
   ParamBinding binding;
   binding.svfModePtr = ptr;
@@ -57,6 +48,31 @@ ParamBinding makeParamBinding(SVFMode *ptr, int min, int max) {
   binding.min = static_cast<float>(min);
   binding.max = static_cast<float>(max);
   return binding;
+}
+
+// Oscillator Bindings
+void bindOscillator(ParamBinding *bindings, ParamID baseId,
+                    wavetable::osc::WavetableOscillator &osc) {
+  bindings[baseId + 0] = makeParamBinding(
+      &osc.mixLevel, ranges::osc::MIX_LEVEL_MIN, ranges::osc::MIX_LEVEL_MAX);
+  bindings[baseId + 1] = makeParamBinding(
+      &osc.detuneAmount, ranges::osc::DETUNE_MIN, ranges::osc::DETUNE_MAX);
+  bindings[baseId + 2] = makeParamBinding(
+      &osc.octaveOffset, ranges::osc::OCTAVE_MIN, ranges::osc::OCTAVE_MAX);
+  bindings[baseId + 3] = makeParamBinding(
+      &osc.scanPosition, ranges::osc::SCAN_POS_MIN, ranges::osc::SCAN_POS_MAX);
+  bindings[baseId + 4] = makeParamBinding(
+      &osc.fmDepth, ranges::osc::FM_DEPTH_MIN, ranges::osc::FM_DEPTH_MAX);
+  bindings[baseId + 5] = makeParamBinding(&osc.enabled);
+}
+
+// Noise Oscillator Binding
+void bindNoiseOscillator(ParamBinding *bindings, ParamID baseId,
+                         noise_osc::NoiseOscillator &noise) {
+  bindings[baseId + 0] =
+      makeParamBinding(&noise.mixLevel, ranges::osc::noise::MIX_LEVEL_MIN,
+                       ranges::osc::noise::MIX_LEVEL_MAX);
+  bindings[baseId + 1] = makeParamBinding(&noise.enabled);
 }
 
 // Filter Bindings
@@ -89,24 +105,6 @@ void bindLadderFilter(ParamBinding *bindings, ParamID baseId,
 
   bindings[baseId + 3] = makeParamBinding(
       &filter.drive, ranges::filter::DRIVE_MIN, ranges::filter::DRIVE_MAX);
-}
-
-// Oscillator Bindings
-void bindOscillator(ParamBinding *bindings, ParamID baseId,
-                    oscillator::Oscillator &osc) {
-  bindings[baseId + 0] = makeParamBinding(
-      &osc.waveform, ranges::osc::WAVEFORM_MIN, ranges::osc::WAVEFORM_MAX);
-
-  bindings[baseId + 1] = makeParamBinding(
-      &osc.mixLevel, ranges::osc::MIX_LEVEL_MIN, ranges::osc::MIX_LEVEL_MAX);
-
-  bindings[baseId + 2] = makeParamBinding(
-      &osc.detuneAmount, ranges::osc::DETUNE_MIN, ranges::osc::DETUNE_MAX);
-
-  bindings[baseId + 3] = makeParamBinding(
-      &osc.octaveOffset, ranges::osc::OCTAVE_MIN, ranges::osc::OCTAVE_MAX);
-
-  bindings[baseId + 4] = makeParamBinding(&osc.enabled);
 }
 
 // Envelope Bindings
@@ -166,12 +164,15 @@ void onParamUpdate(Engine &engine, ParamID id) {
 
 // ==== APIs ====
 void initParamBindings(Engine &engine) {
-  // Oscillators - 5 params each, enum layout must match!
-  bindOscillator(engine.paramBindings, OSC1_WAVEFORM, engine.voicePool.osc1);
-  bindOscillator(engine.paramBindings, OSC2_WAVEFORM, engine.voicePool.osc2);
-  bindOscillator(engine.paramBindings, OSC3_WAVEFORM, engine.voicePool.osc3);
-  bindOscillator(engine.paramBindings, SUB_OSC_WAVEFORM,
+  // Oscillators - 6 params each, enum layout must match!
+  bindOscillator(engine.paramBindings, OSC1_MIX_LEVEL, engine.voicePool.osc1);
+  bindOscillator(engine.paramBindings, OSC2_MIX_LEVEL, engine.voicePool.osc2);
+  bindOscillator(engine.paramBindings, OSC3_MIX_LEVEL, engine.voicePool.osc3);
+  bindOscillator(engine.paramBindings, SUB_OSC_MIX_LEVEL,
                  engine.voicePool.subOsc);
+
+  bindNoiseOscillator(engine.paramBindings, NOISE_OSC_MIX_LEVEL,
+                      engine.voicePool.noiseOsc);
 
   // Envelopes
   bindEnvelope(engine.paramBindings, AMP_ENV_ATTACK, engine.voicePool.ampEnv);
@@ -218,10 +219,6 @@ float getParamValueByID(const Engine &engine, ParamID id,
 
   case FILTER_MODE:
     value = static_cast<float>(static_cast<int>(*binding.svfModePtr));
-    break;
-
-  case WAVEFORM:
-    value = static_cast<float>(static_cast<int>(*binding.waveformPtr));
     break;
   }
 
@@ -272,11 +269,6 @@ void setParamValueByID(Engine &engine, ParamID id, float value,
   case FILTER_MODE:
     *binding.svfModePtr =
         static_cast<filters::SVFMode>(static_cast<int>(std::round(value)));
-    break;
-
-  case WAVEFORM:
-    *binding.waveformPtr =
-        static_cast<WaveformType>(static_cast<int>(std::round(value)));
     break;
   }
 
@@ -339,20 +331,4 @@ SVFMode getSVFModeType(const char *inputValue) {
   return filters::SVFMode::LP;
 };
 
-WaveformType getWaveformType(const char *inputValue) {
-  if (strcasecmp(inputValue, "sine") == 0)
-    return WaveformType::Sine;
-
-  if (strcasecmp(inputValue, "saw") == 0)
-    return WaveformType::Saw;
-
-  if (strcasecmp(inputValue, "square") == 0)
-    return WaveformType::Square;
-
-  if (strcasecmp(inputValue, "triangle") == 0)
-    return WaveformType::Triangle;
-
-  // default to Sine
-  return WaveformType::Sine;
-}
 } // namespace synth::param::bindings
