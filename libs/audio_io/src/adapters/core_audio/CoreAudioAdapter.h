@@ -7,7 +7,7 @@
 
 namespace CoreAudioAdapter {
 
-AudioStreamBasicDescription configToASBD(const audio_io::Config &config);
+AudioStreamBasicDescription configToASBD(const audio_io::Config& config);
 
 PLATFORM_SETUP(coreAudioSetup);
 PLATFORM_START(coreAudioStart);

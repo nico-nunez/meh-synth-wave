@@ -8,16 +8,14 @@ struct SVFOutputs {
 // ==== Chamberlin ====
 // NOTE(nico): consider calculating per block instead of per sample
 // TODO(nico): probably remove this
-void updateFilterCoefficients(float &f, float &q, float cutoff, float resonance,
-                              float sampleRate);
+void updateFilterCoefficients(float& f, float& q, float cutoff, float resonance, float sampleRate);
 
-void processSVF(float input, float cutoff, float resonance, SVFOutputs &state,
-                float sampleRate);
+void processSVF(float input, float cutoff, float resonance, SVFOutputs& state, float sampleRate);
 
 // Access outputs from SVFState (maybe...)
-float getLowpass(const SVFOutputs &state);
-float getHighpass(const SVFOutputs &state);
-float getBandpass(const SVFOutputs &state);
+float getLowpass(const SVFOutputs& state);
+float getHighpass(const SVFOutputs& state);
+float getBandpass(const SVFOutputs& state);
 
 // ==== Cytomic / TPT Form ====
 struct SVFState {
@@ -31,14 +29,13 @@ struct SVFCoeffs {
 };
 
 SVFCoeffs computeSVFCoeffs(float cutoff, float Q, float invSampleRate);
-SVFOutputs processSVF(float input, const SVFCoeffs &c, SVFState &s);
+SVFOutputs processSVF(float input, const SVFCoeffs& c, SVFState& s);
 
 // ==== Ladder Filter (Moog style) ====
 struct LadderState {
   float s[4] = {0, 0, 0, 0};
 };
 
-float processLadder(float input, float f, float resonance, LadderState &st);
-float processLadderNonlinear(float input, float f, float resonance, float drive,
-                             LadderState &st);
+float processLadder(float input, float f, float resonance, LadderState& st);
+float processLadderNonlinear(float input, float f, float resonance, float drive, LadderState& st);
 } // namespace dsp::filters

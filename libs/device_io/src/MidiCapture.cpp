@@ -14,7 +14,7 @@ struct MidiSession {
   // === User-provided ===
   MidiConfig config;
   MidiCallback userCallback = nullptr;
-  void *userContext = nullptr;
+  void* userContext = nullptr;
 
   // === CoreMIDI handles ===
   MIDIClientRef client = 0;  // Connection to CoreMIDI system
@@ -40,8 +40,8 @@ struct MidiSession {
   // std::atomic<bool> threadRunning{false};
 };
 
-void parseAndDispatch(MidiSession *session, const MIDIPacket *packet) {
-  const uint8_t *data = packet->data;
+void parseAndDispatch(MidiSession* session, const MIDIPacket* packet) {
+  const uint8_t* data = packet->data;
   size_t remaining = packet->length;
 
   while (remaining > 0) {
@@ -80,8 +80,7 @@ void parseAndDispatch(MidiSession *session, const MIDIPacket *packet) {
       event.data1 = data[1]; // note
       event.data2 = data[2]; // velocity
       // Velocity 0 = Note Off (MIDI convention)
-      event.type = (event.data2 > 0) ? MidiEvent::Type::NoteOn
-                                     : MidiEvent::Type::NoteOff;
+      event.type = (event.data2 > 0) ? MidiEvent::Type::NoteOn : MidiEvent::Type::NoteOff;
       messageLength = 3;
       break;
 
@@ -151,8 +150,7 @@ MIDIEndpointRef getSourceByUniqueID(MIDIUniqueID targetID) {
   MIDIObjectRef foundObject;
   MIDIObjectType foundType;
 
-  OSStatus status =
-      MIDIObjectFindByUniqueID(targetID, &foundObject, &foundType);
+  OSStatus status = MIDIObjectFindByUniqueID(targetID, &foundObject, &foundType);
   if (status != noErr) {
     printf("Error finding MIDI object for uniqueID: %d\n", targetID);
     return 0;
@@ -167,14 +165,14 @@ MIDIEndpointRef getSourceByUniqueID(MIDIUniqueID targetID) {
 }
 
 // ==== Navtive Callback ====
-void midiInputCallback(const MIDIPacketList *packetList, void *refCon, void *) {
-  auto *session = static_cast<MidiSession *>(refCon);
+void midiInputCallback(const MIDIPacketList* packetList, void* refCon, void*) {
+  auto* session = static_cast<MidiSession*>(refCon);
 
   // Early out if session is stopped
   if (!session || !session->running)
     return;
 
-  const MIDIPacket *packet = &packetList->packet[0];
+  const MIDIPacket* packet = &packetList->packet[0];
 
   for (UInt32 i = 0; i < packetList->numPackets; i++) {
     // NOTE(nico): A packet can contain multiple messages
@@ -211,7 +209,7 @@ int disconnectMidiSourceAtIndex(hMidiSession session, size_t srcIndex) {
 
 // ==== APIs ====
 
-size_t getMidiSources(struct MidiSource *srcBuffer, size_t srcBufferCount) {
+size_t getMidiSources(struct MidiSource* srcBuffer, size_t srcBufferCount) {
   size_t numSources = 0;
 
   ItemCount sourceCount = MIDIGetNumberOfSources();
@@ -223,22 +221,21 @@ size_t getMidiSources(struct MidiSource *srcBuffer, size_t srcBufferCount) {
     CFStringRef name = NULL;
     MIDIObjectGetStringProperty(source, kMIDIPropertyDisplayName, &name);
     if (name) {
-      CFStringGetCString(name, srcBuffer[i].displayName,
+      CFStringGetCString(name,
+                         srcBuffer[i].displayName,
                          sizeof(srcBuffer[i].displayName),
                          kCFStringEncodingUTF8);
       CFRelease(name);
     }
 
-    MIDIObjectGetIntegerProperty(source, kMIDIPropertyUniqueID,
-                                 &srcBuffer[i].uniqueID);
+    MIDIObjectGetIntegerProperty(source, kMIDIPropertyUniqueID, &srcBuffer[i].uniqueID);
     numSources++;
   }
 
   return numSources;
 };
 
-MidiSession *setupMidiSession(const MidiConfig &config, MidiCallback callback,
-                              void *userContext) {
+MidiSession* setupMidiSession(const MidiConfig& config, MidiCallback callback, void* userContext) {
   auto session = new MidiSession();
 
   session->config = config;
@@ -248,16 +245,18 @@ MidiSession *setupMidiSession(const MidiConfig &config, MidiCallback callback,
   OSStatus status;
 
   // TODO(nico): add notify callback to allow for hot swappable devices
-  status =
-      MIDIClientCreate(CFSTR("Meh Device IO"), NULL, NULL, &session->client);
+  status = MIDIClientCreate(CFSTR("Meh Device IO"), NULL, NULL, &session->client);
   if (status != noErr) {
     printf("Error creating MIDI client: %d\n", status);
     delete session;
     return nullptr;
   }
 
-  status = MIDIInputPortCreate(session->client, CFSTR("Meh Input"),
-                               midiInputCallback, session, &session->inputPort);
+  status = MIDIInputPortCreate(session->client,
+                               CFSTR("Meh Input"),
+                               midiInputCallback,
+                               session,
+                               &session->inputPort);
   if (status != noErr) {
     printf("Error creating input port: %d\n", status);
     MIDIClientDispose(session->client);
@@ -271,8 +270,7 @@ MidiSession *setupMidiSession(const MidiConfig &config, MidiCallback callback,
 int connectMidiSource(hMidiSession session, MIDIUniqueID uniqueID) {
   // TODO(nico): validate source
 
-  auto connectedSource =
-      &session->connectedSources[session->connectedSourceCount];
+  auto connectedSource = &session->connectedSources[session->connectedSourceCount];
 
   MIDIEndpointRef source = getSourceByUniqueID(uniqueID);
   if (!source) {

@@ -26,6 +26,8 @@ float square(float phase, float phaseIncrement, float pulseWidth = 0.5f);
 float triangle(float phase);
 
 // Process block
-float processWaveform(WaveformType type, float phase,
-                      float phaseIncrement = 0.0, float pulseWidth = 0.5f);
+float processWaveform(WaveformType type,
+                      float phase,
+                      float phaseIncrement = 0.0,
+                      float pulseWidth = 0.5f);
 } // namespace dsp::waveforms

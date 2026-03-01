@@ -6,6 +6,6 @@ struct Config;
 struct AudioBuffer;
 
 struct AudioSession;
-using hAudioSession = AudioSession *;
+using hAudioSession = AudioSession*;
 
 } // namespace audio_io

@@ -11,8 +11,9 @@
 
 namespace audio_io {
 
-hAudioSession setupAudioSession(const Config &userConfig,
-                                AudioCallback userCallback, void *userContext) {
+hAudioSession setupAudioSession(const Config& userConfig,
+                                AudioCallback userCallback,
+                                void* userContext) {
 
   // Create a new AudioSession
   hAudioSession sessionPtr = new AudioSession();
@@ -49,7 +50,7 @@ hAudioSession setupAudioSession(const Config &userConfig,
   if (bufferFormat == BufferFormat::NonInterleaved) {
 
     // Non-Interleaved == buffer per channel (Narrow Frame)
-    buffer.channelPtrs = new float *[numChannels];
+    buffer.channelPtrs = new float*[numChannels];
 
     for (size_t i = 0; i < numChannels; i++)
       buffer.channelPtrs[i] = sessionPtr->bufferMemory + (numFrames * i);

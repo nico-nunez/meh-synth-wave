@@ -17,6 +17,11 @@ inline constexpr float FM_DEPTH_MAX = 5.0f;
 inline constexpr float SCAN_POS_MIN = 0.0f;
 inline constexpr float SCAN_POS_MAX = 1.0f;
 
+float clampScanPos(float scanPos);
+float clampMixLevel(float mixLevel);
+float clampDetune(float detuneAmount);
+float clampOctave(int8_t octaveOffset);
+
 namespace noise {
 inline constexpr float MIX_LEVEL_MIN = 0.0f;
 inline constexpr float MIX_LEVEL_MAX = 1.0f;
@@ -24,9 +29,6 @@ inline constexpr float MIX_LEVEL_MAX = 1.0f;
 float clampMixLevel(float mixLevel);
 } // namespace noise
 
-float clampMixLevel(float mixLevel);
-float clampDetune(float detuneAmount);
-float clampOctave(int8_t octaveOffset);
 } // namespace osc
 
 namespace env {
@@ -41,8 +43,7 @@ float clampSustain(float sustainLevel);
 
 namespace filter {
 inline constexpr uint8_t FILTER_MODE_MIN = 0;
-inline constexpr uint8_t FILTER_MODE_MAX =
-    static_cast<uint8_t>(filters::SVFMode::MODE_COUNT) - 1;
+inline constexpr uint8_t FILTER_MODE_MAX = static_cast<uint8_t>(filters::SVFMode::MODE_COUNT) - 1;
 inline constexpr float CUTOFF_MIN = 20.0f;    // Hz
 inline constexpr float CUTOFF_MAX = 20000.0f; // Hz
 inline constexpr float RESONANCE_MIN = 0.0f;

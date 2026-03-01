@@ -28,7 +28,8 @@ namespace pb = param::bindings;
 namespace {
 
 // Parse input string and update param value
-int setInputParam(const std::string &paramName, std::istringstream &iss,
+int setInputParam(const std::string& paramName,
+                  std::istringstream& iss,
                   s_io::hSynthSession session) {
   float paramValue;
 
@@ -78,20 +79,20 @@ int setInputParam(const std::string &paramName, std::istringstream &iss,
 }
 
 using FMSource = wavetable::osc::FMSource;
-FMSource parseFMSource(const char *s) {
+FMSource parseFMSource(const char* s) {
   if (strcasecmp(s, "osc1") == 0)
     return FMSource::Osc1;
   if (strcasecmp(s, "osc2") == 0)
     return FMSource::Osc2;
   if (strcasecmp(s, "osc3") == 0)
     return FMSource::Osc3;
-  if (strcasecmp(s, "sub") == 0)
-    return FMSource::Sub;
+  if (strcasecmp(s, "osc4") == 0)
+    return FMSource::Osc4;
   return FMSource::None;
 }
 
 using NoiseType = noise_osc::NoiseType;
-NoiseType parseNoiseType(const char *s) {
+NoiseType parseNoiseType(const char* s) {
   if (strcasecmp(s, "pink") == 0)
     return noise_osc::NoiseType::Pink;
   return noise_osc::NoiseType::White;
@@ -99,8 +100,7 @@ NoiseType parseNoiseType(const char *s) {
 
 } // namespace
 
-void parseCommand(const std::string &line, Engine &engine,
-                  s_io::hSynthSession session) {
+void parseCommand(const std::string& line, Engine& engine, s_io::hSynthSession session) {
   std::istringstream iss(line);
   std::string cmd;
   iss >> cmd;
@@ -117,7 +117,7 @@ void parseCommand(const std::string &line, Engine &engine,
       std::string value;
       iss >> value;
 
-      auto *bank = synth::wavetable::banks::getBankByName(value.c_str());
+      auto* bank = synth::wavetable::banks::getBankByName(value.c_str());
 
       if (bank)
         engine.voicePool.osc1.bank = bank;
@@ -130,7 +130,7 @@ void parseCommand(const std::string &line, Engine &engine,
       std::string value;
       iss >> value;
 
-      auto *bank = synth::wavetable::banks::getBankByName(value.c_str());
+      auto* bank = synth::wavetable::banks::getBankByName(value.c_str());
 
       if (bank)
         engine.voicePool.osc2.bank = bank;
@@ -143,7 +143,7 @@ void parseCommand(const std::string &line, Engine &engine,
       std::string value;
       iss >> value;
 
-      auto *bank = synth::wavetable::banks::getBankByName(value.c_str());
+      auto* bank = synth::wavetable::banks::getBankByName(value.c_str());
 
       if (bank)
         engine.voicePool.osc3.bank = bank;
@@ -152,14 +152,14 @@ void parseCommand(const std::string &line, Engine &engine,
 
       return;
     }
-    if (paramName == "subOsc.bank") {
+    if (paramName == "osc4.bank") {
       std::string value;
       iss >> value;
 
-      auto *bank = synth::wavetable::banks::getBankByName(value.c_str());
+      auto* bank = synth::wavetable::banks::getBankByName(value.c_str());
 
       if (bank)
-        engine.voicePool.subOsc.bank = bank;
+        engine.voicePool.osc4.bank = bank;
       else
         printf("unknown bank: %s\n", value.c_str());
 
@@ -187,10 +187,10 @@ void parseCommand(const std::string &line, Engine &engine,
       return;
     }
 
-    if (paramName == "subOsc.fmSource") {
+    if (paramName == "osc4.fmSource") {
       std::string value;
       iss >> value;
-      engine.voicePool.subOsc.fmSource = parseFMSource(value.c_str());
+      engine.voicePool.osc4.fmSource = parseFMSource(value.c_str());
       return;
     }
 

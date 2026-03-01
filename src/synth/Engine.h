@@ -40,12 +40,11 @@ struct Engine {
 
   uint32_t noteCount = 0;
 
-  void processNoteEvent(const NoteEvent &event);
-  void processParamEvent(const ParamEvent &event);
-  void processAudioBlock(float **outputBuffer, size_t numChannels,
-                         size_t numFrames);
+  void processNoteEvent(const NoteEvent& event);
+  void processParamEvent(const ParamEvent& event);
+  void processAudioBlock(float** outputBuffer, size_t numChannels, size_t numFrames);
 };
 
-Engine createEngine(const EngineConfig &config);
+Engine createEngine(const EngineConfig& config);
 
 } // namespace synth

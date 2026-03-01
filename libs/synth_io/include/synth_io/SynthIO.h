@@ -7,7 +7,7 @@
 
 namespace synth_io {
 struct SynthSession;
-using hSynthSession = SynthSession *;
+using hSynthSession = SynthSession*;
 
 // --- Constants ---
 inline constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
@@ -26,11 +26,13 @@ struct SessionConfig {
   BufferFormat bufferFormat = BufferFormat::NonInterleaved;
 };
 
-typedef void (*NoteEventHandler)(NoteEvent noteEvent, void *userContext);
-typedef void (*AudioBufferHandler)(float **outputBuffer, size_t numChannels,
-                                   size_t numFrames, void *userContext);
+typedef void (*NoteEventHandler)(NoteEvent noteEvent, void* userContext);
+typedef void (*AudioBufferHandler)(float** outputBuffer,
+                                   size_t numChannels,
+                                   size_t numFrames,
+                                   void* userContext);
 
-typedef void (*ParamEventHandler)(ParamEvent paramEvent, void *userContext);
+typedef void (*ParamEventHandler)(ParamEvent paramEvent, void* userContext);
 
 struct SynthCallbacks {
   ParamEventHandler processParamEvent = nullptr;
@@ -41,7 +43,7 @@ struct SynthCallbacks {
 // ==== Session Handlers ====
 hSynthSession initSession(SessionConfig userConfig,
                           SynthCallbacks userCallbacks,
-                          void *userContext = NULL);
+                          void* userContext = NULL);
 
 int startSession(hSynthSession sessionPtr);
 int stopSession(hSynthSession sessionPtr);

@@ -15,6 +15,7 @@ using Envelope = envelope::Envelope;
 
 using WavetableOsc = wavetable::osc::WavetableOscillator;
 using WavetableOscConfig = wavetable::osc::WavetableOscConfig;
+using WavetableOscModState = wavetable::osc::WavetableOscModState;
 
 using NoiseOsc = noise_osc::NoiseOscillator;
 using NoiseOscConfig = noise_osc::NoiseOscConfig;
@@ -25,7 +26,7 @@ struct VoicePoolConfig {
   WavetableOscConfig osc1{};
   WavetableOscConfig osc2{};
   WavetableOscConfig osc3{};
-  WavetableOscConfig subOsc{};
+  WavetableOscConfig osc4{};
 
   NoiseOscConfig noiseOsc{};
 
@@ -35,11 +36,11 @@ struct VoicePoolConfig {
 
 // VoicePool - top-level container (universal synth)
 struct VoicePool {
-  // ==== Oscillators (3 main + sub oscillator) ====
+  // ==== Oscillators (4 oscillators) ====
   WavetableOsc osc1;
   WavetableOsc osc2;
   WavetableOsc osc3;
-  WavetableOsc subOsc;
+  WavetableOsc osc4;
 
   NoiseOsc noiseOsc;
 
@@ -80,6 +81,9 @@ struct VoicePool {
   uint32_t noteOnTimes[MAX_VOICES]; // NoteOn counter ( 1 is older than 2)
   uint8_t isActive[MAX_VOICES];     // 1 = active, 0 = free
 
+  // FM Modulation
+  WavetableOscModState oscModState;
+
   float sampleRate;
   float invSampleRate;
 
@@ -89,30 +93,37 @@ struct VoicePool {
 };
 
 // Initialize VoicePool (once upon engin creation)
-void initVoicePool(VoicePool &pool, const VoicePoolConfig &config);
+void initVoicePool(VoicePool& pool, const VoicePoolConfig& config);
 
 // updating existing Engine member
-void updateVoicePoolConfig(VoicePool &pool, const VoicePoolConfig &config);
+void updateVoicePoolConfig(VoicePool& pool, const VoicePoolConfig& config);
 
 // Find free or oldest voice index for voice Initialization
-uint32_t allocateVoiceIndex(VoicePool &pool);
+uint32_t allocateVoiceIndex(VoicePool& pool);
 
 // Initial voice state for noteOn event
-void initializeVoice(VoicePool &pool, uint32_t index, uint8_t midiNote,
-                     float velocity, uint32_t noteOnTime, float sampleRate);
+void initializeVoice(VoicePool& pool,
+                     uint32_t index,
+                     uint8_t midiNote,
+                     float velocity,
+                     uint32_t noteOnTime,
+                     float sampleRate);
 
 // Trigger envelope release for voice playing midiNote
-void releaseVoice(VoicePool &pool, uint8_t midiNote);
+void releaseVoice(VoicePool& pool, uint8_t midiNote);
 
 // Add newly active voice (noteOn)
-void addActiveIndex(VoicePool &pool, uint32_t voiceIndex);
+void addActiveIndex(VoicePool& pool, uint32_t voiceIndex);
 
 // Remove an inactive voice (noteOff)
-void removeInactiveIndex(VoicePool &pool, uint32_t voiceIndex);
+void removeInactiveIndex(VoicePool& pool, uint32_t voiceIndex);
 
-void processVoices(VoicePool &pool, float *output, size_t numSamples);
+void processVoices(VoicePool& pool, float* output, size_t numSamples);
 
-void handleNoteOn(VoicePool &pool, uint8_t midiNote, float velocity,
-                  uint32_t noteOnTime, float sampleRate);
+void handleNoteOn(VoicePool& pool,
+                  uint8_t midiNote,
+                  float velocity,
+                  uint32_t noteOnTime,
+                  float sampleRate);
 
 } // namespace synth::voices

@@ -3,20 +3,18 @@
 
 namespace audio_io {
 struct AudioSession {
-  float *bufferMemory; // Actual memory buffer
+  float* bufferMemory; // Actual memory buffer
   AudioBuffer buffer;  // user facing with pointers to bufferMemory
 
   Config userConfig;
 
   AudioCallback userCallback;
-  void *userContext;
+  void* userContext;
 
-  void *platformContext;
+  void* platformContext;
 
-  bool isValid() const {
-    return bufferMemory != nullptr && platformContext != nullptr;
-  }
+  bool isValid() const { return bufferMemory != nullptr && platformContext != nullptr; }
 };
 
-using hAudioSession = AudioSession *;
+using hAudioSession = AudioSession*;
 } // namespace audio_io

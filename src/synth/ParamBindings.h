@@ -36,13 +36,13 @@ enum ParamID {
   OSC3_FM_DEPTH,
   OSC3_ENABLED,
 
-  // Sub Oscillator
-  SUB_OSC_MIX_LEVEL,
-  SUB_OSC_DETUNE_AMOUNT,
-  SUB_OSC_OCTAVE_OFFSET,
-  SUB_OSC_SCAN_POS,
-  SUB_OSC_FM_DEPTH,
-  SUB_OSC_ENABLED,
+  // Oscillator 4
+  OSC4_MIX_LEVEL,
+  OSC4_DETUNE_AMOUNT,
+  OSC4_OCTAVE_OFFSET,
+  OSC4_SCAN_POS,
+  OSC4_FM_DEPTH,
+  OSC4_ENABLED,
 
   // Noise Oscillator
   NOISE_OSC_MIX_LEVEL,
@@ -86,10 +86,10 @@ enum ParamValueType { FLOAT, INT8, BOOL, FILTER_MODE };
 
 struct ParamBinding {
   union {
-    float *floatPtr;
-    int8_t *int8Ptr;
-    bool *boolPtr;
-    SVFMode *svfModePtr;
+    float* floatPtr;
+    int8_t* int8Ptr;
+    bool* boolPtr;
+    SVFMode* svfModePtr;
   };
   ParamValueType type;
   float min, max;
@@ -98,7 +98,7 @@ struct ParamBinding {
 // ==== Param Parsing ====
 struct ParamMapping {
   ParamID id;
-  const char *name;
+  const char* name;
   ParamValueType type;
 };
 
@@ -125,12 +125,12 @@ constexpr ParamMapping PARAM_NAMES[] = {
     {OSC3_FM_DEPTH, "osc3.fmDepth", ParamValueType::FLOAT},
     {OSC3_ENABLED, "osc3.enabled", ParamValueType::BOOL},
 
-    {SUB_OSC_MIX_LEVEL, "subOsc.mixLevel", ParamValueType::FLOAT},
-    {SUB_OSC_DETUNE_AMOUNT, "subOsc.detune", ParamValueType::FLOAT},
-    {SUB_OSC_OCTAVE_OFFSET, "subOsc.octave", ParamValueType::INT8},
-    {SUB_OSC_SCAN_POS, "subOsc.scanPos", ParamValueType::FLOAT},
-    {SUB_OSC_FM_DEPTH, "subOsc.fmDepth", ParamValueType::FLOAT},
-    {SUB_OSC_ENABLED, "subOsc.enabled", ParamValueType::BOOL},
+    {OSC4_MIX_LEVEL, "osc4.mixLevel", ParamValueType::FLOAT},
+    {OSC4_DETUNE_AMOUNT, "osc4.detune", ParamValueType::FLOAT},
+    {OSC4_OCTAVE_OFFSET, "osc4.octave", ParamValueType::INT8},
+    {OSC4_SCAN_POS, "osc4.scanPos", ParamValueType::FLOAT},
+    {OSC4_FM_DEPTH, "osc4.fmDepth", ParamValueType::FLOAT},
+    {OSC4_ENABLED, "osc4.enabled", ParamValueType::BOOL},
 
     {NOISE_OSC_MIX_LEVEL, "noiseOsc.mixLevel", ParamValueType::FLOAT},
     {NOISE_OSC_ENABLED, "noiseOsc.enabled", ParamValueType::BOOL},
@@ -159,30 +159,31 @@ constexpr ParamMapping PARAM_NAMES[] = {
 
 };
 
-inline constexpr ParamMapping PARAM_MAPPING_NOT_FOUND{PARAM_COUNT, "not.found",
+inline constexpr ParamMapping PARAM_MAPPING_NOT_FOUND{PARAM_COUNT,
+                                                      "not.found",
                                                       ParamValueType::BOOL};
 
-inline constexpr size_t PARAM_NAME_COUNT =
-    sizeof(PARAM_NAMES) / sizeof(PARAM_NAMES[0]);
+inline constexpr size_t PARAM_NAME_COUNT = sizeof(PARAM_NAMES) / sizeof(PARAM_NAMES[0]);
 
 // ==== API Methods ====
-void initParamBindings(synth::Engine &engine);
+void initParamBindings(synth::Engine& engine);
 
-float getParamValueByID(
-    const Engine &engine, ParamID id,
-    ParamValueFormat valueFormat = ParamValueFormat::DENORMALIZED);
+float getParamValueByID(const Engine& engine,
+                        ParamID id,
+                        ParamValueFormat valueFormat = ParamValueFormat::DENORMALIZED);
 
-void printParamList(const char *optionalParam);
+void printParamList(const char* optionalParam);
 
-void setParamValueByID(
-    Engine &engine, ParamID id, float value,
-    ParamValueFormat valueFormat = ParamValueFormat::DENORMALIZED);
+void setParamValueByID(Engine& engine,
+                       ParamID id,
+                       float value,
+                       ParamValueFormat valueFormat = ParamValueFormat::DENORMALIZED);
 
 // String parsing helpers
-ParamMapping findParamByName(const char *name);
-const char *getParamName(ParamID id);
+ParamMapping findParamByName(const char* name);
+const char* getParamName(ParamID id);
 
 // Helpers for dealing with param values that are strings
-SVFMode getSVFModeType(const char *inputValue);
+SVFMode getSVFModeType(const char* inputValue);
 
 } // namespace synth::param::bindings

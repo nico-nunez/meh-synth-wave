@@ -3,7 +3,7 @@
 
 namespace synth_io {
 
-bool NoteEventQueue::push(const NoteEvent &event) {
+bool NoteEventQueue::push(const NoteEvent& event) {
   size_t currentIndex = writeIndex.load();
   size_t nextIndex = (currentIndex + 1) & WRAP;
 
@@ -16,7 +16,7 @@ bool NoteEventQueue::push(const NoteEvent &event) {
   return true;
 }
 
-bool NoteEventQueue::pop(NoteEvent &event) {
+bool NoteEventQueue::pop(NoteEvent& event) {
   size_t currentIndex = readIndex.load();
 
   if (currentIndex == writeIndex.load())
@@ -28,7 +28,7 @@ bool NoteEventQueue::pop(NoteEvent &event) {
   return true;
 }
 
-void NoteEventQueue::printEvent(NoteEvent &event) {
+void NoteEventQueue::printEvent(NoteEvent& event) {
   printf("==== Event ====\n");
   printf("type: %d\n", (int)event.type);
   printf("midi: %d\n", event.midiNote);

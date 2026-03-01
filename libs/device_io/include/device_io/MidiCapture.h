@@ -82,10 +82,10 @@ struct MidiEvent {
   // (convenience) float pitchBendNormalized = 0;  // -1.0 to +1.0
 };
 
-using MidiCallback = void (*)(MidiEvent event, void *userData);
+using MidiCallback = void (*)(MidiEvent event, void* userData);
 
 struct MidiSession;
-using hMidiSession = MidiSession *;
+using hMidiSession = MidiSession*;
 
 // ==== API ====
 
@@ -102,11 +102,10 @@ using hMidiSession = MidiSession *;
         @result			Number of sources found.  Last source buffer
    item is equal to return value - 1
 */
-size_t getMidiSources(MidiSource *buffer, size_t bufferSize);
+size_t getMidiSources(MidiSource* buffer, size_t bufferSize);
 
 // Create session with callback
-hMidiSession setupMidiSession(const MidiConfig &config, MidiCallback callback,
-                              void *userContext);
+hMidiSession setupMidiSession(const MidiConfig& config, MidiCallback callback, void* userContext);
 
 // Connect/disconnect sources (can call before or after start)
 int connectMidiSource(hMidiSession session, MIDIUniqueID uniqueID);

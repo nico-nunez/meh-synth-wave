@@ -13,8 +13,7 @@ namespace synth::utils {
 float semitoneToFrequency(int semitones) {
   // Cast `semitones` to float since std::pow is optimized for floats(32-bit)
   return ROOT_NOTE_FREQ *
-         static_cast<float>(std::pow(dsp::math::SEMITONE_RATIO,
-                                     static_cast<float>(semitones)));
+         static_cast<float>(std::pow(dsp::math::SEMITONE_RATIO, static_cast<float>(semitones)));
 }
 
 float midiToFrequency(int midiValue) {
@@ -22,7 +21,9 @@ float midiToFrequency(int midiValue) {
 }
 
 // ==== DB Conversion Helpers ====
-float dBtoLinear(float dB) { return std::pow(10.0f, dB / 20.0f); }
+float dBtoLinear(float dB) {
+  return std::pow(10.0f, dB / 20.0f);
+}
 
 float linearToDb(float linear) {
   if (linear <= 0.0f)

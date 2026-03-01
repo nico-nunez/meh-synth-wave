@@ -2,9 +2,14 @@
 
 namespace dsp::envelopes {
 
-float processADSR(Status &state, float &amplitude, float &progress,
-                  float &releaseStartLevel, float attackInc, float decayInc,
-                  float releaseInc, float sustainLevel) {
+float processADSR(Status& state,
+                  float& amplitude,
+                  float& progress,
+                  float& releaseStartLevel,
+                  float attackInc,
+                  float decayInc,
+                  float releaseInc,
+                  float sustainLevel) {
   switch (state) {
   case Status::Attack:
     progress += attackInc;

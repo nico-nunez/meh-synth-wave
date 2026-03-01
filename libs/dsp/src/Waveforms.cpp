@@ -19,10 +19,14 @@ float polyBlep(float deltaTime) {
 }
 
 // Sine wave (band-limited as-is)
-float sine(float phase) { return std::sin(phase * math::TWO_PI_F); }
+float sine(float phase) {
+  return std::sin(phase * math::TWO_PI_F);
+}
 
 // NOTE:  using normalized phase results in a cool distorted sound
-float sineNormalized(float phase) { return std::sin(phase); }
+float sineNormalized(float phase) {
+  return std::sin(phase);
+}
 
 //==== SQUARE WAVEFORMS ====
 // Naive Square for LFO and initial PolyBLep value
@@ -62,7 +66,9 @@ float square(float phase, float phaseIncrement, float pulseWidth) {
 
 // ===== SAW WAVEFORM ======
 // Naive Saw for LFO and initial PolyBLep value
-float sawNaive(float phase) { return 2.0f * phase - 1.0f; }
+float sawNaive(float phase) {
+  return 2.0f * phase - 1.0f;
+}
 
 // Saw wave with PolyBLep anti-aliasing
 float saw(float phase, float phaseIncrement) {
@@ -83,12 +89,13 @@ float saw(float phase, float phaseIncrement) {
 }
 
 // Triangle wave (no slope correction)
-float triangle(float phase) { return 1.0f - 4.0f * std::abs(phase - 0.5f); }
+float triangle(float phase) {
+  return 1.0f - 4.0f * std::abs(phase - 0.5f);
+}
 
 // Process oscillator sample value
 // NOTE(nico): this probably is going to change
-float processWaveform(WaveformType type, float phase, float phaseIncrement,
-                      float pulseWidth) {
+float processWaveform(WaveformType type, float phase, float phaseIncrement, float pulseWidth) {
   switch (type) {
   case WaveformType::WAVEFORM_COUNT:
   case WaveformType::Sine:

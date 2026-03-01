@@ -55,7 +55,7 @@ enum : uint16_t {
  * event: the key event data
  * userData: pointer passed to startKeyCapture
  */
-using KeyCallback = void (*)(KeyEvent event, void *userData);
+using KeyCallback = void (*)(KeyEvent event, void* userData);
 
 // Capture mode configuration
 enum class CaptureMode {
@@ -66,7 +66,7 @@ enum class CaptureMode {
 
 // Window configuration (for local capture mode)
 struct WindowConfig {
-  const char *title; // Window title
+  const char* title; // Window title
   int width;         // Window width
   int height;        // Window height
   bool showOnStart;  // Show window immediately
@@ -88,7 +88,7 @@ void initKeyCaptureApp();
 bool createCaptureWindow(WindowConfig config);
 
 // Update the window's display text
-void setWindowText(const char *text);
+void setWindowText(const char* text);
 
 /* Start capturing keyboard events
  * callback: function to call for each key event
@@ -96,7 +96,7 @@ void setWindowText(const char *text);
  * mode: which capture mode to use
  * Returns true on success
  */
-bool startKeyCapture(KeyCallback callback, void *userData, CaptureMode mode);
+bool startKeyCapture(KeyCallback callback, void* userData, CaptureMode mode);
 
 // Stop capturing keyboard events
 void stopKeyCapture();

@@ -15,7 +15,7 @@
 namespace device_io {
 
 // Helper to get modifier name from keyCode
-const char *getModifierName(uint16_t keyCode) {
+const char* getModifierName(uint16_t keyCode) {
   switch (keyCode) {
   case key_code::ShiftLeft:
     return "LShift";
@@ -43,8 +43,8 @@ const char *getModifierName(uint16_t keyCode) {
 }
 
 // Your callback function - receives all key events
-void handleKeyEvent(KeyEvent event, void * /*userData*/) {
-  const char *typeStr = "?";
+void handleKeyEvent(KeyEvent event, void* /*userData*/) {
+  const char* typeStr = "?";
   switch (event.type) {
   case KeyEventType::KeyDown:
     typeStr = "DOWN   ";
@@ -62,12 +62,24 @@ void handleKeyEvent(KeyEvent event, void * /*userData*/) {
 
   if (event.type == KeyEventType::ModifierChanged) {
     printf("%s keyCode=%3d (%s) shift=%d ctrl=%d alt=%d cmd=%d caps=%d fn=%d\n",
-           typeStr, event.keyCode, getModifierName(event.keyCode), event.shift,
-           event.ctrl, event.alt, event.cmd, event.capsLock, event.fn);
+           typeStr,
+           event.keyCode,
+           getModifierName(event.keyCode),
+           event.shift,
+           event.ctrl,
+           event.alt,
+           event.cmd,
+           event.capsLock,
+           event.fn);
   } else {
-    printf("%s keyCode=%3d char='%c' shift=%d ctrl=%d alt=%d cmd=%d\n", typeStr,
-           event.keyCode, event.character ? event.character : ' ', event.shift,
-           event.ctrl, event.alt, event.cmd);
+    printf("%s keyCode=%3d char='%c' shift=%d ctrl=%d alt=%d cmd=%d\n",
+           typeStr,
+           event.keyCode,
+           event.character ? event.character : ' ',
+           event.shift,
+           event.ctrl,
+           event.alt,
+           event.cmd);
   }
 
   // Example: ESC to quit

@@ -24,12 +24,12 @@ struct SynthSession {
   ParamEventHandler processParamEvent;
 
   hAudioSession audioSession;
-  void *userContext;
+  void* userContext;
 };
-using hSynthSession = SynthSession *;
+using hSynthSession = SynthSession*;
 
-static void audioCallback(AudioBuffer buffer, void *context) {
-  auto *ctx = static_cast<SynthSession *>(context);
+static void audioCallback(AudioBuffer buffer, void* context) {
+  auto* ctx = static_cast<SynthSession*>(context);
 
   if (ctx->processParamEvent) {
     ParamEvent paramEvent;
@@ -46,8 +46,10 @@ static void audioCallback(AudioBuffer buffer, void *context) {
   }
 
   if (ctx->processAudioBlock) {
-    ctx->processAudioBlock(buffer.channelPtrs, buffer.numChannels,
-                           buffer.numFrames, ctx->userContext);
+    ctx->processAudioBlock(buffer.channelPtrs,
+                           buffer.numChannels,
+                           buffer.numFrames,
+                           ctx->userContext);
   }
 }
 
@@ -55,7 +57,8 @@ static void audioCallback(AudioBuffer buffer, void *context) {
 
 // ==== Session Handlers ====
 hSynthSession initSession(SessionConfig userConfig,
-                          SynthCallbacks userCallbacks, void *userContext) {
+                          SynthCallbacks userCallbacks,
+                          void* userContext) {
 
   hSynthSession sessionPtr = new SynthSession();
   sessionPtr->processParamEvent = userCallbacks.processParamEvent;
@@ -68,11 +71,9 @@ hSynthSession initSession(SessionConfig userConfig,
   config.sampleRate = userConfig.sampleRate;
   config.numChannels = userConfig.numChannels;
   config.numFrames = userConfig.numFrames;
-  config.bufferFormat =
-      static_cast<audio_io::BufferFormat>(userConfig.bufferFormat);
+  config.bufferFormat = static_cast<audio_io::BufferFormat>(userConfig.bufferFormat);
 
-  sessionPtr->audioSession =
-      audio_io::setupAudioSession(config, audioCallback, sessionPtr);
+  sessionPtr->audioSession = audio_io::setupAudioSession(config, audioCallback, sessionPtr);
 
   return sessionPtr;
 };
@@ -100,14 +101,12 @@ int disposeSession(hSynthSession sessionPtr) {
 // ==== Note Event Handlers ====
 bool noteOn(hSynthSession sessionPtr, uint8_t midiNote, uint8_t velocity) {
   // TODO(nico): replicate emplace_back() to reduce copy;
-  return sessionPtr->noteEventQueue.push(
-      {NoteEventType::NoteOn, midiNote, velocity});
+  return sessionPtr->noteEventQueue.push({NoteEventType::NoteOn, midiNote, velocity});
 }
 
 bool noteOff(hSynthSession sessionPtr, uint8_t midiNote, uint8_t velocity) {
   // TODO(nico): replicate emplace_back() to reduce copy;
-  return sessionPtr->noteEventQueue.push(
-      {NoteEventType::NoteOff, midiNote, velocity});
+  return sessionPtr->noteEventQueue.push({NoteEventType::NoteOff, midiNote, velocity});
 }
 
 // ==== Parameter Event Handlers ====

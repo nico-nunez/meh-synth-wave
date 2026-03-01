@@ -5,6 +5,10 @@ namespace synth::param::ranges {
 
 // Oscillator Param Helpers
 namespace osc {
+
+float clampScanPos(float scanPos) {
+  return std::clamp(scanPos, SCAN_POS_MIN, SCAN_POS_MAX);
+}
 float clampMixLevel(float mixLevel) {
   return std::clamp(mixLevel, MIX_LEVEL_MIN, MIX_LEVEL_MAX);
 }

@@ -9,9 +9,9 @@ enum BankID { Sine = 0, Saw, Square, Triangle, SineToSaw, COUNT };
 
 void initFactoryBanks();
 
-void registerBank(BankID id, WavetableBank *bank);
+void registerBank(BankID id, WavetableBank* bank);
 
-WavetableBank *getBankByID(BankID id);
-WavetableBank *getBankByName(const char *name);
+WavetableBank* getBankByID(BankID id);
+WavetableBank* getBankByName(const char* name);
 
 } // namespace synth::wavetable::banks

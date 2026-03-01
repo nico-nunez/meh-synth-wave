@@ -3,7 +3,7 @@
 
 namespace synth_io {
 
-bool ParamEventQueue::push(const ParamEvent &event) {
+bool ParamEventQueue::push(const ParamEvent& event) {
   size_t currentIndex = writeIndex.load();
   size_t nextIndex = (currentIndex + 1) & WRAP;
 
@@ -16,7 +16,7 @@ bool ParamEventQueue::push(const ParamEvent &event) {
   return true;
 }
 
-bool ParamEventQueue::pop(ParamEvent &event) {
+bool ParamEventQueue::pop(ParamEvent& event) {
   size_t currentIndex = readIndex.load();
 
   if (currentIndex == writeIndex.load())
@@ -28,7 +28,7 @@ bool ParamEventQueue::pop(ParamEvent &event) {
   return true;
 }
 
-void ParamEventQueue::printEvent(ParamEvent &event) {
+void ParamEventQueue::printEvent(ParamEvent& event) {
   printf("==== Event ====\n");
   printf("paramID: %d\n", (int)event.id);
   printf("value: %f\n", event.value);

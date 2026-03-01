@@ -41,8 +41,7 @@ struct LadderFilter {
   // Global settings (cold data)
   float cutoff = 1000.0f; // Hz
   float resonance = 0.3f; // 0.0–1.0 (mapped to 0–4 internally)
-  float drive =
-      1.0f; // 1.0 = neutral, higher = more saturation (nonlinear path)
+  float drive = 1.0f;     // 1.0 = neutral, higher = more saturation (nonlinear path)
   bool enabled = false;
 };
 
@@ -51,28 +50,34 @@ struct LadderFilter {
 float computeEffectiveCutoff(float baseCutoff, float cutoffModOctaves);
 
 // ==== SVF Helpers ====
-void initSVFilter(SVFilter &filter, size_t voiceIndex);
+void initSVFilter(SVFilter& filter, size_t voiceIndex);
 
-void updateSVFCoefficients(SVFilter &filter, float invSampleRate);
+void updateSVFCoefficients(SVFilter& filter, float invSampleRate);
 
 // No modulation parameters
-float processSVFilter(SVFilter &filter, float input, uint32_t voiceIndex);
+float processSVFilter(SVFilter& filter, float input, uint32_t voiceIndex);
 
 // With modulation parameters
-float processSVFilter(SVFilter &filter, float input, uint32_t voiceIndex,
-                      float cutoffHz, float resonance, float invSampleRate);
+float processSVFilter(SVFilter& filter,
+                      float input,
+                      uint32_t voiceIndex,
+                      float cutoffHz,
+                      float resonance,
+                      float invSampleRate);
 
 // ==== Ladder Helpers ====
-void initLadderFilter(LadderFilter &filter, size_t voiceIndex);
+void initLadderFilter(LadderFilter& filter, size_t voiceIndex);
 
-void updateLadderCoefficient(LadderFilter &filter, float invSampleRate);
+void updateLadderCoefficient(LadderFilter& filter, float invSampleRate);
 
 // No modulation parameters
-float processLadderFilter(LadderFilter &filter, float input,
-                          uint32_t voiceIndex);
+float processLadderFilter(LadderFilter& filter, float input, uint32_t voiceIndex);
 // With modulation parameters
-float processLadderFilter(LadderFilter &filter, float input,
-                          uint32_t voiceIndex, float cutoffHz, float resonance,
+float processLadderFilter(LadderFilter& filter,
+                          float input,
+                          uint32_t voiceIndex,
+                          float cutoffHz,
+                          float resonance,
                           float invSampleRate);
 
 } // namespace synth::filters

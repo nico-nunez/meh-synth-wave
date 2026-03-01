@@ -12,7 +12,7 @@ float computeEffectiveCutoff(float baseCutoff, float cutoffModOctaves) {
 }
 
 // ==== SVF Helpers ====
-void enableSVFilter(SVFilter &filter, bool enable) {
+void enableSVFilter(SVFilter& filter, bool enable) {
   if (enable && !filter.enabled) {
     // Reset all voice states
     for (uint32_t i = 0; i < MAX_VOICES; i++) {
@@ -22,23 +22,21 @@ void enableSVFilter(SVFilter &filter, bool enable) {
   filter.enabled = enable;
 }
 
-void initSVFilter(SVFilter &filter, size_t voiceIndex) {
+void initSVFilter(SVFilter& filter, size_t voiceIndex) {
   filter.voiceStates[voiceIndex] = SVFState{};
 }
 
-void updateSVFCoefficients(SVFilter &filter, float invSampleRate) {
+void updateSVFCoefficients(SVFilter& filter, float invSampleRate) {
   float Q = 0.5f + filter.resonance * 20.0f;
-  filter.coeffs =
-      dsp::filters::computeSVFCoeffs(filter.cutoff, Q, invSampleRate);
+  filter.coeffs = dsp::filters::computeSVFCoeffs(filter.cutoff, Q, invSampleRate);
 }
 
 // Use when NOT passing modulation values (cutoff and/or resonance)
-float processSVFilter(SVFilter &filter, float input, uint32_t voiceIndex) {
+float processSVFilter(SVFilter& filter, float input, uint32_t voiceIndex) {
   if (!filter.enabled)
     return input;
 
-  SVFOutputs out = dsp::filters::processSVF(input, filter.coeffs,
-                                            filter.voiceStates[voiceIndex]);
+  SVFOutputs out = dsp::filters::processSVF(input, filter.coeffs, filter.voiceStates[voiceIndex]);
 
   switch (filter.mode) {
   case SVFMode::MODE_COUNT:
@@ -55,8 +53,12 @@ float processSVFilter(SVFilter &filter, float input, uint32_t voiceIndex) {
 }
 
 // Use when passing modulation values (cutoff and/or resonance)
-float processSVFilter(SVFilter &filter, float input, uint32_t voiceIndex,
-                      float cutoffHz, float resonance, float invSampleRate) {
+float processSVFilter(SVFilter& filter,
+                      float input,
+                      uint32_t voiceIndex,
+                      float cutoffHz,
+                      float resonance,
+                      float invSampleRate) {
   if (!filter.enabled)
     return input;
 
@@ -64,12 +66,11 @@ float processSVFilter(SVFilter &filter, float input, uint32_t voiceIndex,
                      std::abs(filter.resonance - resonance) > 0.001f;
 
   SVFCoeffs coeffs =
-      isModulated ? dsp::filters::computeSVFCoeffs(
-                        cutoffHz, 0.5f + resonance * 20.0f, invSampleRate)
-                  : filter.coeffs;
+      isModulated
+          ? dsp::filters::computeSVFCoeffs(cutoffHz, 0.5f + resonance * 20.0f, invSampleRate)
+          : filter.coeffs;
 
-  SVFOutputs out =
-      dsp::filters::processSVF(input, coeffs, filter.voiceStates[voiceIndex]);
+  SVFOutputs out = dsp::filters::processSVF(input, coeffs, filter.voiceStates[voiceIndex]);
 
   switch (filter.mode) {
   case SVFMode::MODE_COUNT:
@@ -86,7 +87,7 @@ float processSVFilter(SVFilter &filter, float input, uint32_t voiceIndex,
 }
 
 // ==== Ladder Helpers ====
-void enableLadderFilter(LadderFilter &filter, bool enable) {
+void enableLadderFilter(LadderFilter& filter, bool enable) {
   if (enable && !filter.enabled) {
     for (uint32_t i = 0; i < MAX_VOICES; i++) {
       filter.voiceStates[i] = dsp::filters::LadderState{};
@@ -95,50 +96,55 @@ void enableLadderFilter(LadderFilter &filter, bool enable) {
   filter.enabled = enable;
 }
 
-void initLadderFilter(LadderFilter &filter, size_t voiceIndex) {
+void initLadderFilter(LadderFilter& filter, size_t voiceIndex) {
   filter.voiceStates[voiceIndex] = LadderState{};
 }
 
-void updateLadderCoefficient(LadderFilter &filter, float invSampleRate) {
-  filter.coeff =
-      2.0f * std::sin(dsp::math::PI_F * filter.cutoff * invSampleRate);
+void updateLadderCoefficient(LadderFilter& filter, float invSampleRate) {
+  filter.coeff = 2.0f * std::sin(dsp::math::PI_F * filter.cutoff * invSampleRate);
 }
 
 // Use when NOT passing modulation values (cutoff and/or resonance)
-float processLadderFilter(LadderFilter &filter, float input,
-                          uint32_t voiceIndex) {
+float processLadderFilter(LadderFilter& filter, float input, uint32_t voiceIndex) {
   if (!filter.enabled)
     return input;
 
   float res = filter.resonance * 4.0f; // map 0–1 to Ladder's 0–4 range
 
   return (filter.drive > 1.001f)
-             ? dsp::filters::processLadderNonlinear(
-                   input, filter.coeff, res, filter.drive,
-                   filter.voiceStates[voiceIndex])
-             : dsp::filters::processLadder(input, filter.coeff, res,
+             ? dsp::filters::processLadderNonlinear(input,
+                                                    filter.coeff,
+                                                    res,
+                                                    filter.drive,
+                                                    filter.voiceStates[voiceIndex])
+             : dsp::filters::processLadder(input,
+                                           filter.coeff,
+                                           res,
                                            filter.voiceStates[voiceIndex]);
 }
 
 // Use when passing modulation values (cutoff and/or resonance)
-float processLadderFilter(LadderFilter &filter, float input,
-                          uint32_t voiceIndex, float cutoffHz, float resonance,
+float processLadderFilter(LadderFilter& filter,
+                          float input,
+                          uint32_t voiceIndex,
+                          float cutoffHz,
+                          float resonance,
                           float invSampleRate) {
   if (!filter.enabled)
     return input;
 
-  float coeff =
-      std::abs(filter.cutoff - cutoffHz) > 0.001f
-          ? 2.0f * std::sin(dsp::math::PI_F * cutoffHz * invSampleRate)
-          : filter.coeff;
+  float coeff = std::abs(filter.cutoff - cutoffHz) > 0.001f
+                    ? 2.0f * std::sin(dsp::math::PI_F * cutoffHz * invSampleRate)
+                    : filter.coeff;
 
   float res = resonance * 4.0f; // map 0–1 to Ladder's 0–4 range
 
   return (filter.drive > 1.001f)
-             ? dsp::filters::processLadderNonlinear(
-                   input, coeff, res, filter.drive,
-                   filter.voiceStates[voiceIndex])
-             : dsp::filters::processLadder(input, coeff, res,
-                                           filter.voiceStates[voiceIndex]);
+             ? dsp::filters::processLadderNonlinear(input,
+                                                    coeff,
+                                                    res,
+                                                    filter.drive,
+                                                    filter.voiceStates[voiceIndex])
+             : dsp::filters::processLadder(input, coeff, res, filter.voiceStates[voiceIndex]);
 }
 } // namespace synth::filters

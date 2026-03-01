@@ -27,8 +27,8 @@ struct AudioBuffer {
   uint32_t numFrames; // Frame == sample interval/step (ie. 128, 256, 512, etc.)
 
   union {
-    float **channelPtrs; // Non-Interleaved (Planar)
-    float *interleavedPtr;
+    float** channelPtrs; // Non-Interleaved (Planar)
+    float* interleavedPtr;
   };
 };
 

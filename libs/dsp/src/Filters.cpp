@@ -8,8 +8,7 @@ namespace dsp::filters {
 
 // ==== Chamberlin (artifacts as it nears Nyquist) ====
 // NOTE(nico): consider calculating per block instead of per sample
-void updateFilterCoefficients(float &f, float &q, float cutoff, float resonance,
-                              float sampleRate) {
+void updateFilterCoefficients(float& f, float& q, float cutoff, float resonance, float sampleRate) {
   // Clamp parameters to stable range
   cutoff = std::clamp(cutoff, 20.0f, sampleRate * 0.45f);
   resonance = std::clamp(resonance, 0.0f, 0.99f);
@@ -19,18 +18,24 @@ void updateFilterCoefficients(float &f, float &q, float cutoff, float resonance,
   q = 1.0f - resonance;
 }
 
-void processSVF(float sample, float f, float q, SVFOutputs &state) {
+void processSVF(float sample, float f, float q, SVFOutputs& state) {
   // Process state-variable filter
   state.lp += f * state.bp;
   state.hp = sample - state.lp - q * state.bp;
   state.bp += f * state.hp;
 }
 
-float getLowpass(const SVFOutputs &state) { return state.lp; }
+float getLowpass(const SVFOutputs& state) {
+  return state.lp;
+}
 
-float getHighpass(const SVFOutputs &state) { return state.hp; }
+float getHighpass(const SVFOutputs& state) {
+  return state.hp;
+}
 
-float getBandpass(const SVFOutputs &state) { return state.bp; }
+float getBandpass(const SVFOutputs& state) {
+  return state.bp;
+}
 
 // ==== Cytomic/TPT Form (fixes issue with Chamberlin) ====
 
@@ -39,8 +44,7 @@ SVFCoeffs computeSVFCoeffs(float cutoff, float Q, float invSampleRate) {
   /* TODO(nico): optimize this
    * - std::tan() polynomial approximation?
    */
-  float g =
-      std::tan(math::PI_F * cutoff * invSampleRate); // pre-warped frequency
+  float g = std::tan(math::PI_F * cutoff * invSampleRate); // pre-warped frequency
   float k = 1.0f / Q;
   float a1 = 1.0f / (1.0f + g * (g + k));
   float a2 = g * a1;
@@ -48,7 +52,7 @@ SVFCoeffs computeSVFCoeffs(float cutoff, float Q, float invSampleRate) {
   return {a1, a2, a3, k};
 }
 
-SVFOutputs processSVF(float input, const SVFCoeffs &c, SVFState &s) {
+SVFOutputs processSVF(float input, const SVFCoeffs& c, SVFState& s) {
   float v3 = input - s.ic2;
   float v1 = c.a1 * s.ic1 + c.a2 * v3;
   float v2 = s.ic2 + c.a2 * s.ic1 + c.a3 * v3;
@@ -62,7 +66,7 @@ SVFOutputs processSVF(float input, const SVFCoeffs &c, SVFState &s) {
 // ==== Ladder Filter (Moog Style) ====
 // resonance: 0 (no resonance) to 4 (self-oscillation)
 // f: 2 * std::sin(M_PI * cutoff / sampleRate)
-float processLadder(float input, float f, float resonance, LadderState &st) {
+float processLadder(float input, float f, float resonance, LadderState& st) {
   float feedback = resonance * st.s[3];
   float x = input - feedback;
 
@@ -74,8 +78,7 @@ float processLadder(float input, float f, float resonance, LadderState &st) {
   return st.s[3];
 }
 
-float processLadderNonlinear(float input, float f, float resonance, float drive,
-                             LadderState &st) {
+float processLadderNonlinear(float input, float f, float resonance, float drive, LadderState& st) {
   // Nonlinear feedback — tanh prevents harsh blowup at high resonance
   float feedback = resonance * std::tanh(st.s[3]);
 

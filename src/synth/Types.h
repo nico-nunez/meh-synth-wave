@@ -4,8 +4,7 @@
 
 namespace synth {
 inline constexpr uint32_t ENGINE_BLOCK_SIZE = 64;
-inline constexpr float INV_ENGINE_BLOCK_SIZE =
-    1.0f / static_cast<float>(ENGINE_BLOCK_SIZE);
+inline constexpr float INV_ENGINE_BLOCK_SIZE = 1.0f / static_cast<float>(ENGINE_BLOCK_SIZE);
 
 inline constexpr uint32_t MAX_VOICES = 64;
 

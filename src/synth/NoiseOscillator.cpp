@@ -3,13 +3,13 @@
 
 namespace synth::noise_osc {
 
-void updateConfig(NoiseOscillator &osc, const NoiseOscConfig &config) {
+void updateConfig(NoiseOscillator& osc, const NoiseOscConfig& config) {
   osc.type = config.type;
   osc.mixLevel = config.mixLevel;
   osc.enabled = config.enabled;
 }
 
-float processNoise(NoiseOscillator &noise) {
+float processNoise(NoiseOscillator& noise) {
   if (!noise.enabled)
     return 0.0f;
 

@@ -28,13 +28,13 @@ struct Envelope {
   float releaseIncrement = 0.0f;
 };
 
-void initEnvelope(Envelope &env, uint32_t voiceIndex, float sampleRate);
+void initEnvelope(Envelope& env, uint32_t voiceIndex, float sampleRate);
 
-void triggerRelease(Envelope &env, uint32_t voiceIndex);
+void triggerRelease(Envelope& env, uint32_t voiceIndex);
 
 // Helper to recalculate increments when ADSR changes
-void updateIncrements(Envelope &env, float sampleRate);
+void updateIncrements(Envelope& env, float sampleRate);
 
-float processEnvelope(Envelope &env, uint32_t voiceIndex);
+float processEnvelope(Envelope& env, uint32_t voiceIndex);
 
 } // namespace synth::envelope

@@ -13,7 +13,7 @@ namespace WavWriter {
 
 // Create WAV file
 // NOTE: std::ofstream doesn't support std::string_view
-std::ofstream createWavFile(const std::string &filename) {
+std::ofstream createWavFile(const std::string& filename) {
   std::ofstream wavFile(filename, std::ios::binary);
   return wavFile;
 }
@@ -21,24 +21,23 @@ std::ofstream createWavFile(const std::string &filename) {
 // WAV file format uses "chunks" - blocks of data with a 4-byte ID and size
 // The main structure is: RIFF chunk -> fmt chunk -> data chunk
 
-void writeString(std::ofstream &file, const char *str, int32_t length) {
+void writeString(std::ofstream& file, const char* str, int32_t length) {
   // Write a fixed-length string to the file
   file.write(str, length);
 }
 
-void writeInt32(std::ofstream &file, int32_t value) {
+void writeInt32(std::ofstream& file, int32_t value) {
   assert(value <= INT_MAX);
 
   // WAV format uses little-endian (least significant byte first)
-  file.write(reinterpret_cast<const char *>(&value), 4);
+  file.write(reinterpret_cast<const char*>(&value), 4);
 }
 
-void writeInt16(std::ofstream &file, int16_t value) {
-  file.write(reinterpret_cast<const char *>(&value), 2);
+void writeInt16(std::ofstream& file, int16_t value) {
+  file.write(reinterpret_cast<const char*>(&value), 2);
 }
 
-void writeWavMetadata(std::ofstream &file, int32_t numSamples,
-                      int32_t sampleRate) {
+void writeWavMetadata(std::ofstream& file, int32_t numSamples, int32_t sampleRate) {
   // WAV files have a specific structure. Let's build it piece by piece:
 
   // --- RIFF HEADER ---
@@ -47,8 +46,7 @@ void writeWavMetadata(std::ofstream &file, int32_t numSamples,
   writeString(file, "RIFF", 4);
 
   // File size minus 8 bytes (for "RIFF" and this size field itself)
-  int32_t fileSize =
-      36 + (numSamples * 2); // 36 = header size, 2 = bytes per sample
+  int32_t fileSize = 36 + (numSamples * 2); // 36 = header size, 2 = bytes per sample
   writeInt32(file, fileSize);
 
   // WAVE format identifier
@@ -81,14 +79,14 @@ void writeWavMetadata(std::ofstream &file, int32_t numSamples,
 }
 
 // Write WAV file to disk
-void writeWavFile(const std::string &filename, std::vector<float> &audioBuffer,
+void writeWavFile(const std::string& filename,
+                  std::vector<float>& audioBuffer,
                   int32_t sampleRate) {
   if (audioBuffer.empty())
     throw std::invalid_argument("Audio buffer is empty");
 
   if (audioBuffer.size() >= INT_MAX)
-    throw std::out_of_range("Audio buffer is too large. Max:" +
-                            std::to_string(INT_MAX));
+    throw std::out_of_range("Audio buffer is too large. Max:" + std::to_string(INT_MAX));
 
   const int32_t TOTAL_SAMPLES{static_cast<int32_t>(audioBuffer.size())};
 
@@ -124,7 +122,7 @@ void writeWavFile(const std::string &filename, std::vector<float> &audioBuffer,
   writeInt32(wavFile, TOTAL_SAMPLES * 2);
 
   // Write all the audio samples
-  for (const auto &sample : pcmData) {
+  for (const auto& sample : pcmData) {
     writeInt16(wavFile, sample);
   }
 

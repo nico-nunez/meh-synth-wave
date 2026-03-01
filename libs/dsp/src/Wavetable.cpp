@@ -9,12 +9,12 @@ namespace dsp::wavetable {
 // ================================
 // Lifecycle
 // ================================
-WavetableBank *createWavetableBank(uint32_t frameCount, const char *name) {
+WavetableBank* createWavetableBank(uint32_t frameCount, const char* name) {
   if (frameCount == 0 || frameCount > MAX_FRAMES) {
     printf("createWavetableBank: invalid frameCount %u\n", frameCount);
     return nullptr;
   }
-  WavetableBank *bank = new WavetableBank();
+  WavetableBank* bank = new WavetableBank();
   bank->frames = new WavetableFrame[frameCount];
   bank->frameCount = frameCount;
 
@@ -24,7 +24,7 @@ WavetableBank *createWavetableBank(uint32_t frameCount, const char *name) {
   return bank;
 }
 
-bool destroyWavetableBank(WavetableBank *bank) {
+bool destroyWavetableBank(WavetableBank* bank) {
   if (!bank) {
     printf("destroyWavetableBank: null bank\n");
     return false;
@@ -47,7 +47,7 @@ bool destroyWavetableBank(WavetableBank *bank) {
  * construction (truncation of a value in [0, TABLE_SIZE_F)). Bitmask is valid
  * because TABLE_SIZE is a power of 2.*/
 
-float readTable(const float *table, float phase) {
+float readTable(const float* table, float phase) {
   uint32_t iA = static_cast<uint32_t>(phase);
   uint32_t iB = (iA + 1) & TABLE_MASK;         // wrap 2047 → 0
   float frac = phase - static_cast<float>(iA); // fractional part [0, 1)

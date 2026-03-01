@@ -5,7 +5,9 @@
 #include <cmath>
 
 namespace dsp::effects {
-float denormalizeDrive(float drive) { return 1 + drive * 4.0f; }
+float denormalizeDrive(float drive) {
+  return 1 + drive * 4.0f;
+}
 
 // Returns whatever drive is (Normalized or Denormalized)
 float calcInvDrive(float drive) {
@@ -65,17 +67,21 @@ float tapeSimulation(float sample, float drive, float bias) {
   return x;
 }
 
-float dcBlock(float sample, float &state, float coefficient) {
+float dcBlock(float sample, float& state, float coefficient) {
   float output = sample - state;
   state = sample * (1.0f - coefficient) + state * coefficient;
   return output;
 }
 
 // tanh — smooth, symmetric, expensive. The "classic" sound.
-float saturate_tanh(float x) { return std::tanh(x); }
+float saturate_tanh(float x) {
+  return std::tanh(x);
+}
 
 // Algebraic soft clip — cheaper than tanh, slightly brighter character
-float saturate_soft(float x) { return x / (1.0f + std::abs(x)); }
+float saturate_soft(float x) {
+  return x / (1.0f + std::abs(x));
+}
 
 // Polynomial tanh approximation — fast, tunable breakpoint
 float saturate_poly(float x) {

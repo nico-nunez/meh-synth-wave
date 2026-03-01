@@ -7,7 +7,7 @@
 
 namespace synth::mod_matrix {
 // ===== Route(s) Management ========
-bool addRoute(ModMatrix &matrix, ModSrc src, ModDest dest, float amount) {
+bool addRoute(ModMatrix& matrix, ModSrc src, ModDest dest, float amount) {
   if (matrix.count >= MAX_MOD_ROUTES)
     return false;
 
@@ -17,7 +17,7 @@ bool addRoute(ModMatrix &matrix, ModSrc src, ModDest dest, float amount) {
   return true;
 }
 
-bool addRoute(ModMatrix &matrix, const ModRoute &route) {
+bool addRoute(ModMatrix& matrix, const ModRoute& route) {
   if (matrix.count >= MAX_MOD_ROUTES)
     return false;
 
@@ -27,7 +27,7 @@ bool addRoute(ModMatrix &matrix, const ModRoute &route) {
   return true;
 }
 
-bool removeRoute(ModMatrix &matrix, uint8_t index) {
+bool removeRoute(ModMatrix& matrix, uint8_t index) {
   if (index >= matrix.count || matrix.count < 1)
     return false;
 
@@ -43,8 +43,8 @@ bool removeRoute(ModMatrix &matrix, uint8_t index) {
   return true;
 }
 
-bool clearRoutes(ModMatrix &matrix) {
-  for (auto &route : matrix.routes) {
+bool clearRoutes(ModMatrix& matrix) {
+  for (auto& route : matrix.routes) {
     route.src = ModSrc::NoSrc;
     route.dest = ModDest::NoDest;
     route.amount = 0.0f;
@@ -55,7 +55,7 @@ bool clearRoutes(ModMatrix &matrix) {
 }
 
 // ====== Steps Management =======
-void clearModDestSteps(ModMatrix &matrix) {
+void clearModDestSteps(ModMatrix& matrix) {
   for (uint8_t d = 0; d < ModDest::DEST_COUNT; d++) {
     for (uint8_t v = 0; v < MAX_VOICES; v++) {
       matrix.destStepValues[d][v] = 0;
@@ -63,11 +63,9 @@ void clearModDestSteps(ModMatrix &matrix) {
   }
 }
 
-void setModDestStep(ModMatrix &matrix, ModDest dest, uint32_t voiceIndex,
-                    float invNumSamples) {
+void setModDestStep(ModMatrix& matrix, ModDest dest, uint32_t voiceIndex, float invNumSamples) {
   matrix.destStepValues[dest][voiceIndex] =
-      (matrix.destValues[dest][voiceIndex] -
-       matrix.prevDestValues[dest][voiceIndex]) *
+      (matrix.destValues[dest][voiceIndex] - matrix.prevDestValues[dest][voiceIndex]) *
       invNumSamples;
 }
 
@@ -77,8 +75,8 @@ void setModDestStep(ModMatrix &matrix, ModDest dest, uint32_t voiceIndex,
 
 // ==== <Internal Helpers> ====
 namespace {
-ModSrc modSrcFromString(const char *input) {
-  for (auto &mapping : modSrcMappings) {
+ModSrc modSrcFromString(const char* input) {
+  for (auto& mapping : modSrcMappings) {
     if (strcasecmp(mapping.name, input) == 0)
       return mapping.src;
   }
@@ -86,29 +84,29 @@ ModSrc modSrcFromString(const char *input) {
   return ModSrc::NoSrc;
 }
 
-ModDest modDestFromString(const char *input) {
-  for (auto &mapping : modDestMappings) {
+ModDest modDestFromString(const char* input) {
+  for (auto& mapping : modDestMappings) {
     if (strcasecmp(mapping.name, input) == 0)
       return mapping.dest;
   }
   return ModDest::NoDest;
 };
 
-const char *modSrcToString(ModSrc src) {
-  for (auto &m : modSrcMappings)
+const char* modSrcToString(ModSrc src) {
+  for (auto& m : modSrcMappings)
     if (m.src == src)
       return m.name;
   return "unknown";
 }
 
-const char *modDestToString(ModDest dest) {
-  for (auto &m : modDestMappings)
+const char* modDestToString(ModDest dest) {
+  for (auto& m : modDestMappings)
     if (m.dest == dest)
       return m.name;
   return "unknown";
 }
 
-void parseAddModCommand(std::istringstream &iss, ModMatrix &modMatrix) {
+void parseAddModCommand(std::istringstream& iss, ModMatrix& modMatrix) {
   std::string srcStr, destStr;
   float amount;
 
@@ -134,11 +132,10 @@ void parseAddModCommand(std::istringstream &iss, ModMatrix &modMatrix) {
     return;
   }
 
-  printf("OK: [%d] %s → %s  x%.2f\n", modMatrix.count - 1, srcStr.c_str(),
-         destStr.c_str(), amount);
+  printf("OK: [%d] %s → %s  x%.2f\n", modMatrix.count - 1, srcStr.c_str(), destStr.c_str(), amount);
 }
 
-void parseRemoveModCommand(std::istringstream &iss, ModMatrix &modMatrix) {
+void parseRemoveModCommand(std::istringstream& iss, ModMatrix& modMatrix) {
   int index;
 
   if (!(iss >> index) || index < 0) {
@@ -147,16 +144,15 @@ void parseRemoveModCommand(std::istringstream &iss, ModMatrix &modMatrix) {
   }
 
   if (!removeRoute(modMatrix, static_cast<uint8_t>(index))) {
-    printf("Error: No route at index %d (count = %d)\n", index,
-           modMatrix.count);
+    printf("Error: No route at index %d (count = %d)\n", index, modMatrix.count);
     return;
   }
 
   printf("OK: route %d removed\n", index);
 }
 
-void parseListModCommand(ModMatrix &modMatrix) {
-  const ModMatrix &matrix = modMatrix;
+void parseListModCommand(ModMatrix& modMatrix) {
+  const ModMatrix& matrix = modMatrix;
 
   if (matrix.count == 0) {
     printf("No active mod routes.\n");
@@ -165,12 +161,15 @@ void parseListModCommand(ModMatrix &modMatrix) {
 
   printf("Mod routes (%d/%d):\n", matrix.count, MAX_MOD_ROUTES);
   for (uint8_t i = 0; i < matrix.count; i++) {
-    const ModRoute &r = matrix.routes[i];
-    printf("  [%d] %-12s → %-20s  x%.2f\n", i, modSrcToString(r.src),
-           modDestToString(r.dest), r.amount);
+    const ModRoute& r = matrix.routes[i];
+    printf("  [%d] %-12s → %-20s  x%.2f\n",
+           i,
+           modSrcToString(r.src),
+           modDestToString(r.dest),
+           r.amount);
   }
 }
-void parseClearModCommand(ModMatrix &modMatrix) {
+void parseClearModCommand(ModMatrix& modMatrix) {
   clearRoutes(modMatrix);
   printf("OK: mod matrix cleared\n");
 }
@@ -183,18 +182,18 @@ void parseHelpModCommand() {
   printf("  mod clear\n");
   printf("  mod help\n");
   printf("\nSources:\n");
-  for (auto &m : modSrcMappings)
+  for (auto& m : modSrcMappings)
     printf("  %s\n", m.name);
 
   printf("\nDestinations:\n");
-  for (auto &m : modDestMappings)
+  for (auto& m : modDestMappings)
     printf("  %s\n", m.name);
 }
 
 } // namespace
 // ==== </ Internal Helpers> ====
 
-void parseModCommand(std::istringstream &iss, ModMatrix &modMatrix) {
+void parseModCommand(std::istringstream& iss, ModMatrix& modMatrix) {
   std::string subcmd;
   iss >> subcmd;
 
@@ -214,8 +213,7 @@ void parseModCommand(std::istringstream &iss, ModMatrix &modMatrix) {
     parseHelpModCommand();
 
   } else {
-    printf("Error: Unknown mod subcommand '%s'. Try 'mod help'.\n",
-           subcmd.c_str());
+    printf("Error: Unknown mod subcommand '%s'. Try 'mod help'.\n", subcmd.c_str());
   }
 }
 

@@ -31,7 +31,7 @@ float tapeSimulation(float sample, float drive, float bias);
  * - Lower (0.99) = more aggressive, removes more low frequencies
  * - 0.995 is a good default - cutoff around 3-5 Hz
  */
-float dcBlock(float sample, float &state, float coefficient = 0.995f);
+float dcBlock(float sample, float& state, float coefficient = 0.995f);
 
 // ==== Alternatives ====
 // tanh — smooth, symmetric, expensive. The "classic" sound.

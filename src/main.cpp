@@ -15,24 +15,23 @@
 #include <string>
 #include <thread>
 
-static void processParamEvent(synth_io::ParamEvent event, void *myContext) {
-  auto engine = static_cast<synth::Engine *>(myContext);
+static void processParamEvent(synth_io::ParamEvent event, void* myContext) {
+  auto engine = static_cast<synth::Engine*>(myContext);
   engine->processParamEvent(event);
 }
 
-static void processNoteEvent(synth_io::NoteEvent event, void *myContext) {
-  auto engine = static_cast<synth::Engine *>(myContext);
+static void processNoteEvent(synth_io::NoteEvent event, void* myContext) {
+  auto engine = static_cast<synth::Engine*>(myContext);
   engine->processNoteEvent(event);
 }
 
-static void processAudioBlock(float **outputBuffer, size_t numChannels,
-                              size_t numFrames, void *myContext) {
-  auto engine = static_cast<synth::Engine *>(myContext);
+static void
+processAudioBlock(float** outputBuffer, size_t numChannels, size_t numFrames, void* myContext) {
+  auto engine = static_cast<synth::Engine*>(myContext);
   engine->processAudioBlock(outputBuffer, numChannels, numFrames);
 }
 
-static void getUserInput(synth::Engine &engine,
-                         synth_io::hSynthSession sessionPtr) {
+static void getUserInput(synth::Engine& engine, synth_io::hSynthSession sessionPtr) {
   bool isRunning = true;
   std::string input;
 
@@ -70,8 +69,7 @@ int main() {
 
   sessionCallbacks.processParamEvent = processParamEvent;
 
-  synth_io::hSynthSession session =
-      synth_io::initSession(sessionConfig, sessionCallbacks, &engine);
+  synth_io::hSynthSession session = synth_io::initSession(sessionConfig, sessionCallbacks, &engine);
 
   synth_io::startSession(session);
 

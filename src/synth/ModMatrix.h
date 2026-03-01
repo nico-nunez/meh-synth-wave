@@ -42,25 +42,25 @@ enum ModDest {
   Osc1Pitch,
   Osc2Pitch,
   Osc3Pitch,
-  SubOscPitch,
+  Osc4Pitch,
 
   // Oscillator mix level — units are linear ±1.0
   Osc1Mix,
   Osc2Mix,
   Osc3Mix,
-  SubOscMix,
+  Osc4Mix,
 
   // Wavetable scan position — 0.0–1.0 offset
   Osc1ScanPos,
   Osc2ScanPos,
   Osc3ScanPos,
-  SubOscScanPos,
+  Osc4ScanPos,
 
   // FM depth modulation — DX7-style "envelope controls FM intensity"
   Osc1FMDepth,
   Osc2FMDepth,
   Osc3FMDepth,
-  SubOscFMDepth,
+  Osc4FMDepth,
 
   DEST_COUNT // used to size arrays, not a valid dest
 };
@@ -91,24 +91,22 @@ struct ModMatrix {
   ModDest2D destStepValues = {};
 };
 
-bool addRoute(ModMatrix &matrix, ModSrc src, ModDest dest, float amount);
-bool addRoute(ModMatrix &matrix, const ModRoute &route);
-bool removeRoute(ModMatrix &matrix, uint8_t index);
-bool clearRoutes(ModMatrix &matrix);
+bool addRoute(ModMatrix& matrix, ModSrc src, ModDest dest, float amount);
+bool addRoute(ModMatrix& matrix, const ModRoute& route);
+bool removeRoute(ModMatrix& matrix, uint8_t index);
+bool clearRoutes(ModMatrix& matrix);
 
-void clearPrevModDests(ModMatrix &matrix);
-void clearModDestSteps(ModMatrix &matrix);
-void setModDestStep(ModMatrix &matrix, ModDest dest, uint32_t voiceIndex,
-                    float invNumSamples);
+void clearPrevModDests(ModMatrix& matrix);
+void clearModDestSteps(ModMatrix& matrix);
+void setModDestStep(ModMatrix& matrix, ModDest dest, uint32_t voiceIndex, float invNumSamples);
 
 // ==== Parsing Helpers ====
 struct ModSrcMapping {
-  const char *name;
+  const char* name;
   const ModSrc src;
 };
 
-inline constexpr ModSrcMapping
-    modSrcMappings[ModSrc::SRC_COUNT - 1] = // Not including "NoSrc"
+inline constexpr ModSrcMapping modSrcMappings[ModSrc::SRC_COUNT - 1] = // Not including "NoSrc"
     {
         // Envelopes
         {"ampEnv", ModSrc::AmpEnv},
@@ -126,11 +124,10 @@ inline constexpr ModSrcMapping
 };
 
 struct ModDestMapping {
-  const char *name;
+  const char* name;
   const ModDest dest;
 };
-inline constexpr ModDestMapping
-    modDestMappings[ModDest::DEST_COUNT - 1] = // Not including "NoDest"
+inline constexpr ModDestMapping modDestMappings[ModDest::DEST_COUNT - 1] = // Not including "NoDest"
     {
         // Filter Cutoff
         {"svf.cutoff", ModDest::SVFCutoff},
@@ -144,26 +141,26 @@ inline constexpr ModDestMapping
         {"osc1.pitch", ModDest::Osc1Pitch},
         {"osc2.pitch", ModDest::Osc2Pitch},
         {"osc3.pitch", ModDest::Osc3Pitch},
-        {"subOsc.pitch", ModDest::SubOscPitch},
+        {"osc4.pitch", ModDest::Osc4Pitch},
 
         // Oscillator Mix
         {"osc1.mixLevel", ModDest::Osc1Mix},
         {"osc2.mixLevel", ModDest::Osc2Mix},
         {"osc3.mixLevel", ModDest::Osc3Mix},
-        {"subOsc.mixLevel", ModDest::SubOscMix},
+        {"osc4.mixLevel", ModDest::Osc4Mix},
 
         // Oscillator Scan Position
         {"osc1.scanPos", ModDest::Osc1ScanPos},
         {"osc2.scanPos", ModDest::Osc2ScanPos},
         {"osc3.scanPos", ModDest::Osc3ScanPos},
-        {"subOsc.scanPos", ModDest::SubOscScanPos},
+        {"osc4.scanPos", ModDest::Osc4ScanPos},
 
         // Oscillator FM Depth
         {"osc1.fmDepth", ModDest::Osc1FMDepth},
         {"osc2.fmDepth", ModDest::Osc2FMDepth},
         {"osc3.fmDepth", ModDest::Osc3FMDepth},
-        {"subOsc.fmDepth", ModDest::SubOscFMDepth},
+        {"osc4.fmDepth", ModDest::Osc4FMDepth},
 };
 
-void parseModCommand(std::istringstream &iss, ModMatrix &modMatrix);
+void parseModCommand(std::istringstream& iss, ModMatrix& modMatrix);
 } // namespace synth::mod_matrix

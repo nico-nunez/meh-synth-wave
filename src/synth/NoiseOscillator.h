@@ -25,9 +25,9 @@ struct NoiseOscillator {
   float b2 = 0.0f;
 };
 
-void updateConfig(NoiseOscillator &noiseOsc, const NoiseOscConfig &config);
+void updateConfig(NoiseOscillator& noiseOsc, const NoiseOscConfig& config);
 
-float processNoise(NoiseOscillator &noise);
+float processNoise(NoiseOscillator& noise);
 // Returns noise in [-1, 1] scaled by mixLevel.
 // White: flat spectrum. Pink: -3dB/octave via Kellet approximation.
 

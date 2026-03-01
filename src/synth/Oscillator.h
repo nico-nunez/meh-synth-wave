@@ -30,25 +30,23 @@ struct Oscillator {
   bool enabled = true;
 };
 
-Oscillator createOscillator(const OscConfig &settings);
-void updateConfig(Oscillator &osc, const OscConfig &settings);
+Oscillator createOscillator(const OscConfig& settings);
+void updateConfig(Oscillator& osc, const OscConfig& settings);
 
-void setWaveformType(Oscillator &osc, WaveformType newType);
-void setMixLevel(Oscillator &osc, float newLevel);
-void setOctiveOffset(Oscillator &osc, int8_t newOffest);
-void setDetuneAmount(Oscillator &osc, float newDetuneAmount);
-void toggleEnabled(Oscillator &osc, bool isEnabled);
+void setWaveformType(Oscillator& osc, WaveformType newType);
+void setMixLevel(Oscillator& osc, float newLevel);
+void setOctiveOffset(Oscillator& osc, int8_t newOffest);
+void setDetuneAmount(Oscillator& osc, float newDetuneAmount);
+void toggleEnabled(Oscillator& osc, bool isEnabled);
 
-void initOscillator(Oscillator &osc, uint32_t voiceIndex, uint8_t midiNote,
-                    float sampleRate);
+void initOscillator(Oscillator& osc, uint32_t voiceIndex, uint8_t midiNote, float sampleRate);
 
-void incrementPhase(Oscillator &osc, uint32_t voiceIndex);
+void incrementPhase(Oscillator& osc, uint32_t voiceIndex);
 
 // Original - pre Mod Matrix and acts as pass-through
-float processOscillator(Oscillator &osc, uint32_t voiceIndex);
+float processOscillator(Oscillator& osc, uint32_t voiceIndex);
 
 // Mod Matrix version allowing pitch modulation (called/returned via original)
-float processOscillator(Oscillator &osc, uint32_t voiceIndex,
-                        float phaseIncrement, float mixLevel);
+float processOscillator(Oscillator& osc, uint32_t voiceIndex, float phaseIncrement, float mixLevel);
 
 } // namespace synth::oscillator

@@ -8,8 +8,7 @@ inline constexpr float TABLE_SIZE_F = static_cast<float>(TABLE_SIZE);
 
 // 2× resolution (may get tossed)
 inline constexpr uint32_t TABLE_SIZE_HI_RES = 4096;
-inline constexpr float TABLE_SIZE_HI_RES_F =
-    static_cast<float>(TABLE_SIZE_HI_RES);
+inline constexpr float TABLE_SIZE_HI_RES_F = static_cast<float>(TABLE_SIZE_HI_RES);
 
 // covers ~11 octaves (MIDI 0–127 is ~10.5)
 inline constexpr uint8_t MAX_MIP_LEVELS = 11;
@@ -26,16 +25,16 @@ struct WavetableFrame {
 };
 
 struct WavetableBank {
-  WavetableFrame *frames;  // heap-allocated: frameCount frames
+  WavetableFrame* frames;  // heap-allocated: frameCount frames
   uint32_t frameCount = 1; // must be non-zero
   char name[MAX_BANK_NAME_LEN];
 };
 
 // Lifecycle
-WavetableBank *createWavetableBank(uint32_t frameCount, const char *name);
-bool destroyWavetableBank(WavetableBank *bank);
+WavetableBank* createWavetableBank(uint32_t frameCount, const char* name);
+bool destroyWavetableBank(WavetableBank* bank);
 
 // Linear table lookup — phase is float in [0, TABLE_SIZE_F)
-float readTable(const float *table, float phase);
+float readTable(const float* table, float phase);
 
 } // namespace dsp::wavetable

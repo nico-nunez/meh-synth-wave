@@ -9,7 +9,7 @@
 namespace synth::oscillator {
 
 // Create a new Oscillator with passed config
-Oscillator createOscillator(const OscConfig &config) {
+Oscillator createOscillator(const OscConfig& config) {
   Oscillator osc{};
   updateConfig(osc, config);
 
@@ -19,8 +19,7 @@ Oscillator createOscillator(const OscConfig &config) {
 // =================================
 // Initialization and Configuration
 // =================================
-void initOscillator(Oscillator &osc, uint32_t voiceIndex, uint8_t midiNote,
-                    float sampleRate) {
+void initOscillator(Oscillator& osc, uint32_t voiceIndex, uint8_t midiNote, float sampleRate) {
 
   float freq = utils::midiToFrequency(midiNote) *
                std::pow(2.0f, static_cast<float>(osc.octaveOffset)) *
@@ -31,7 +30,7 @@ void initOscillator(Oscillator &osc, uint32_t voiceIndex, uint8_t midiNote,
 }
 
 // Helper for updating global settings
-void updateConfig(Oscillator &osc, const OscConfig &config) {
+void updateConfig(Oscillator& osc, const OscConfig& config) {
   if (osc.detuneAmount != config.detuneAmount)
     osc.detuneAmount = config.detuneAmount;
 
@@ -50,13 +49,13 @@ void updateConfig(Oscillator &osc, const OscConfig &config) {
 
 // TODO(nico): are the following even necessary
 // given it's up to the caller to recalculate?
-void setWaveformType(Oscillator &osc, WaveformType newType) {
+void setWaveformType(Oscillator& osc, WaveformType newType) {
   osc.waveform = newType;
   // NOTE(nico): don't reset active voices or update anything else
   // Caller can do this if they want but shouldn't on active voices (clicks)
 }
 
-void setMixLevel(Oscillator &osc, float newLevel) {
+void setMixLevel(Oscillator& osc, float newLevel) {
   // Ensure values falls within valid range (0 - 4.0)
   if (newLevel < 0.0f) {
     newLevel = 0.0f;
@@ -67,24 +66,26 @@ void setMixLevel(Oscillator &osc, float newLevel) {
   osc.mixLevel = newLevel;
 }
 
-void setOctiveOffset(Oscillator &osc, int8_t newOffest) {
+void setOctiveOffset(Oscillator& osc, int8_t newOffest) {
   osc.octaveOffset = newOffest;
   // NOTE(nico): recalculation needs to be triggerd by caller to update active
   // voices
 }
 
-void setDetuneAmount(Oscillator &osc, float newDetuneAmount) {
+void setDetuneAmount(Oscillator& osc, float newDetuneAmount) {
   osc.detuneAmount = newDetuneAmount;
   // NOTE(nico): recalculation needs to be triggerd by caller to update active
   // voices
 }
 
-void toggleEnabled(Oscillator &osc, bool isEnabled) { osc.enabled = isEnabled; }
+void toggleEnabled(Oscillator& osc, bool isEnabled) {
+  osc.enabled = isEnabled;
+}
 
 // =================================
 // Processing
 // =================================
-void incrementPhase(Oscillator &osc, uint32_t voiceIndex) {
+void incrementPhase(Oscillator& osc, uint32_t voiceIndex) {
   osc.phases[voiceIndex] += osc.phaseIncrements[voiceIndex];
 
   // Wrap index
@@ -93,11 +94,11 @@ void incrementPhase(Oscillator &osc, uint32_t voiceIndex) {
 }
 
 // Use this if NOT passing pitch and/or mix modulation
-float processOscillator(Oscillator &osc, uint32_t voiceIndex) {
-  float sample =
-      dsp::waveforms::processWaveform(osc.waveform, osc.phases[voiceIndex],
-                                      osc.phaseIncrements[voiceIndex]) *
-      osc.mixLevel;
+float processOscillator(Oscillator& osc, uint32_t voiceIndex) {
+  float sample = dsp::waveforms::processWaveform(osc.waveform,
+                                                 osc.phases[voiceIndex],
+                                                 osc.phaseIncrements[voiceIndex]) *
+                 osc.mixLevel;
 
   incrementPhase(osc, voiceIndex);
 
@@ -106,11 +107,13 @@ float processOscillator(Oscillator &osc, uint32_t voiceIndex) {
 
 // Use this if passing pitch and/or mix modulation values
 // NOTE(nico): values are expected to be calculated by caller
-float processOscillator(Oscillator &osc, uint32_t voiceIndex,
-                        float phaseIncrement, float mixLevel) {
-  float sample = dsp::waveforms::processWaveform(
-                     osc.waveform, osc.phases[voiceIndex], phaseIncrement) *
-                 param::ranges::osc::clampMixLevel(mixLevel);
+float processOscillator(Oscillator& osc,
+                        uint32_t voiceIndex,
+                        float phaseIncrement,
+                        float mixLevel) {
+  float sample =
+      dsp::waveforms::processWaveform(osc.waveform, osc.phases[voiceIndex], phaseIncrement) *
+      param::ranges::osc::clampMixLevel(mixLevel);
 
   // Advance using the modulated increment, not the stored one
   osc.phases[voiceIndex] += phaseIncrement;

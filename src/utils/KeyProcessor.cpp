@@ -19,7 +19,7 @@ using NoteEvent = synth_io::NoteEvent;
 using NoteEventType = synth_io::NoteEventType;
 
 // Handle MIDI device events
-static void midiCallback(MidiEvent midiEvent, void *context) {
+static void midiCallback(MidiEvent midiEvent, void* context) {
   auto sessionPtr = static_cast<hSynthSession>(context);
 
   // TODO(nico): handle more than just note on/off events
@@ -37,7 +37,7 @@ static void midiCallback(MidiEvent midiEvent, void *context) {
 }
 
 // Handle keyboard events
-static void keyEventCallback(device_io::KeyEvent event, void *userContext) {
+static void keyEventCallback(device_io::KeyEvent event, void* userContext) {
   auto sessionPtr = static_cast<hSynthSession>(userContext);
 
   // Currently 'z' & 'x' control octive up/down
@@ -69,8 +69,7 @@ hMidiSession initMidiSession(hSynthSession sessionPtr) {
   // 1a. Setup MIDI on this thread's run loop for now
   constexpr size_t MAX_MIDI_DEVICES = 16;
   device_io::MidiSource midiSourceBuffer[MAX_MIDI_DEVICES];
-  size_t numMidiDevices =
-      device_io::getMidiSources(midiSourceBuffer, MAX_MIDI_DEVICES);
+  size_t numMidiDevices = device_io::getMidiSources(midiSourceBuffer, MAX_MIDI_DEVICES);
 
   hMidiSession midiSession = nullptr;
 
@@ -92,8 +91,7 @@ hMidiSession initMidiSession(hSynthSession sessionPtr) {
 
     midiSession = device_io::setupMidiSession({}, midiCallback, sessionPtr);
 
-    device_io::connectMidiSource(midiSession,
-                                 midiSourceBuffer[srcIndex].uniqueID);
+    device_io::connectMidiSource(midiSession, midiSourceBuffer[srcIndex].uniqueID);
 
     device_io::startMidiSession(midiSession);
 
@@ -104,8 +102,7 @@ hMidiSession initMidiSession(hSynthSession sessionPtr) {
   return midiSession;
 }
 
-int startKeyInputCapture(hSynthSession sessionPtr,
-                         hMidiSession midiSessionPtr) {
+int startKeyInputCapture(hSynthSession sessionPtr, hMidiSession midiSessionPtr) {
   printf("KeyCapture Example\n");
   printf("------------------\n");
   printf("Press keys to see events. ESC to quit.\n\n");
@@ -128,25 +125,23 @@ int startKeyInputCapture(hSynthSession sessionPtr,
   // focused)
   //    Change to CaptureMode::Global if you need capture when not focused
   //    Change to CaptureMode::Both if you want both behaviors
-  if (!startKeyCapture(keyEventCallback, sessionPtr,
-                       device_io::CaptureMode::Local)) {
+  if (!startKeyCapture(keyEventCallback, sessionPtr, device_io::CaptureMode::Local)) {
     printf("Failed to start key capture\n");
     return 1;
   }
 
-  const char *windowText =
-      "Super Synth\n\n"
-      "Press 'z' to go down an octive and 'c' to go up an octive\n\n"
-      "================= Keyboard Layout ================\n"
-      "|    |   |   |   |   |   |   |   |   |   |   |   |\n"
-      "|    |   |   |   |   |   |   |   |   |   |   |   |\n"
-      "|    | w |   | E |   |   | T |   | Y |   | U |   |\n"
-      "|    |___|   |___|   |   |___|   |___|   |___|   |\n"
-      "|      |       |     |     |       |       |     |\n"
-      "|      |       |     |     |       |       |     |\n"
-      "|  A   |   S   |  D  |  F  |   G   |   H   |  J  |\n"
-      "|______|_______|_____|_____|_______|_______|_____|\n\n"
-      "Press keys... (ESC to quit)\n";
+  const char* windowText = "Super Synth\n\n"
+                           "Press 'z' to go down an octive and 'c' to go up an octive\n\n"
+                           "================= Keyboard Layout ================\n"
+                           "|    |   |   |   |   |   |   |   |   |   |   |   |\n"
+                           "|    |   |   |   |   |   |   |   |   |   |   |   |\n"
+                           "|    | w |   | E |   |   | T |   | Y |   | U |   |\n"
+                           "|    |___|   |___|   |   |___|   |___|   |___|   |\n"
+                           "|      |       |     |     |       |       |     |\n"
+                           "|      |       |     |     |       |       |     |\n"
+                           "|  A   |   S   |  D  |  F  |   G   |   H   |  J  |\n"
+                           "|______|_______|_____|_____|_______|_______|_____|\n\n"
+                           "Press keys... (ESC to quit)\n";
 
   // Update window text
   device_io::setWindowText(windowText);

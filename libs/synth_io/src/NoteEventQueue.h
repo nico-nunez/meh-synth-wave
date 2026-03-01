@@ -19,10 +19,10 @@ struct NoteEventQueue {
   std::atomic<size_t> readIndex{0};
   std::atomic<size_t> writeIndex{0};
 
-  bool push(const NoteEvent &event);
-  bool pop(NoteEvent &event);
+  bool push(const NoteEvent& event);
+  bool pop(NoteEvent& event);
 
-  void printEvent(NoteEvent &event);
+  void printEvent(NoteEvent& event);
   void printQueue();
 };
 

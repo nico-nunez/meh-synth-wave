@@ -13,11 +13,11 @@ namespace dsp_wt = dsp::wavetable;
 // ================================
 // Initialization
 // ================================
-void initOscillator(WavetableOscillator &osc, uint32_t voiceIndex,
-                    uint8_t midiNote, float sampleRate) {
-  float offsetExp =
-      static_cast<float>(osc.octaveOffset) + (osc.detuneAmount / 1200.0f);
-
+void initOscillator(WavetableOscillator& osc,
+                    uint32_t voiceIndex,
+                    uint8_t midiNote,
+                    float sampleRate) {
+  float offsetExp = static_cast<float>(osc.octaveOffset) + (osc.detuneAmount / 1200.0f);
   float freq = utils::midiToFrequency(midiNote) * std::exp2f(offsetExp);
 
   osc.phases[voiceIndex] = 0.0f;
@@ -27,7 +27,7 @@ void initOscillator(WavetableOscillator &osc, uint32_t voiceIndex,
 // ================================
 // Configuration
 // ================================
-void updateConfig(WavetableOscillator &osc, const WavetableOscConfig &config) {
+void updateConfig(WavetableOscillator& osc, const WavetableOscConfig& config) {
   osc.bank = config.bank;
   osc.scanPosition = config.scanPosition;
   osc.mixLevel = config.mixLevel;
@@ -77,8 +77,11 @@ float selectMipLevel(float phaseIncrement) {
  * between frameA and frameB is sufficient — morphing is perceptually smooth at
  * block-rate.
  */
-float readWavetable(const WavetableOscillator &osc, uint32_t voiceIndex,
-                    float mipF, float effectiveScanPos, float fmPhaseOffset) {
+float readWavetable(const WavetableOscillator& osc,
+                    uint32_t voiceIndex,
+                    float mipF,
+                    float effectiveScanPos,
+                    float fmPhaseOffset) {
   if (!osc.enabled || osc.bank == nullptr)
     return 0.0f;
 
@@ -105,8 +108,7 @@ float readWavetable(const WavetableOscillator &osc, uint32_t voiceIndex,
   // Multi-frame: interpolate between adjacent frames
   float scanF = effectiveScanPos * float(osc.bank->frameCount - 1);
 
-  int frameA = std::min(static_cast<int>(scanF),
-                        static_cast<int>(osc.bank->frameCount) - 2);
+  int frameA = std::min(static_cast<int>(scanF), static_cast<int>(osc.bank->frameCount) - 2);
   int frameB = frameA + 1;
   float fFrac = scanF - float(frameA);
 
@@ -121,11 +123,13 @@ float readWavetable(const WavetableOscillator &osc, uint32_t voiceIndex,
   return sA + mFrac * (sB - sA);           // mip lerp
 }
 
-float processOscillator(WavetableOscillator &osc, uint32_t voiceIndex,
-                        float mipF, float effectiveScanPos, float fmPhaseOffset,
+float processOscillator(WavetableOscillator& osc,
+                        uint32_t voiceIndex,
+                        float mipF,
+                        float effectiveScanPos,
+                        float fmPhaseOffset,
                         float pitchIncrement) {
-  float sample =
-      readWavetable(osc, voiceIndex, mipF, effectiveScanPos, fmPhaseOffset);
+  float sample = readWavetable(osc, voiceIndex, mipF, effectiveScanPos, fmPhaseOffset);
 
   osc.phases[voiceIndex] += pitchIncrement;
   osc.phases[voiceIndex] -= floorf(osc.phases[voiceIndex]);
@@ -133,4 +137,29 @@ float processOscillator(WavetableOscillator &osc, uint32_t voiceIndex,
   return sample;
 }
 
+// =========================
+// FM Modulation
+// =========================
+
+void resetOscModState(WavetableOscModState& modState, uint32_t voiceIndex) {
+  modState.osc1[voiceIndex] = 0.0f;
+  modState.osc2[voiceIndex] = 0.0f;
+  modState.osc3[voiceIndex] = 0.0f;
+  modState.osc4[voiceIndex] = 0.0f;
+}
+
+float getFmSourceValue(WavetableOscModState& modState, uint32_t voiceIndex, FMSource src) {
+  switch (src) {
+  case FMSource::Osc1:
+    return modState.osc1[voiceIndex];
+  case FMSource::Osc2:
+    return modState.osc2[voiceIndex];
+  case FMSource::Osc3:
+    return modState.osc3[voiceIndex];
+  case FMSource::Osc4:
+    return modState.osc4[voiceIndex];
+  default:
+    return 0.0f;
+  }
+}
 } // namespace synth::wavetable::osc

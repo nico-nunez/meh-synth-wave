@@ -11,9 +11,7 @@ float fastExp2(float x) {
   int32_t xi = static_cast<int32_t>(x);
   float xf = x - static_cast<float>(xi);
 
-  float p =
-      1.0f + xf * (0.6931472f +
-                   xf * (0.2402265f + xf * (0.0555041f + xf * 0.0096181f)));
+  float p = 1.0f + xf * (0.6931472f + xf * (0.2402265f + xf * (0.0555041f + xf * 0.0096181f)));
 
   int32_t bits;
   std::memcpy(&bits, &p, 4);
@@ -24,7 +22,9 @@ float fastExp2(float x) {
   return p;
 }
 
-float semitonesToFreqRatio(float x) { return fastExp2(x / 12); }
+float semitonesToFreqRatio(float x) {
+  return fastExp2(x / 12);
+}
 
 // Fast approximation of log2(x)
 float fastLog2(float val) {
@@ -47,8 +47,7 @@ uint32_t xorshift32() {
 }
 
 float randNoiseValue() {
-  return static_cast<float>(static_cast<int32_t>(xorshift32())) *
-         4.6566129e-10f; // float → [-1, 1]
+  return static_cast<float>(static_cast<int32_t>(xorshift32())) * 4.6566129e-10f; // float → [-1, 1]
 }
 
 } // namespace dsp::math

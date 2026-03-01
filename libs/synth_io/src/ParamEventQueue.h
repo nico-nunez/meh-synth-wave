@@ -19,10 +19,10 @@ struct ParamEventQueue {
   std::atomic<size_t> readIndex{0};
   std::atomic<size_t> writeIndex{0};
 
-  bool push(const ParamEvent &event);
-  bool pop(ParamEvent &event);
+  bool push(const ParamEvent& event);
+  bool pop(ParamEvent& event);
 
-  void printEvent(ParamEvent &event);
+  void printEvent(ParamEvent& event);
   void printQueue();
 };
 

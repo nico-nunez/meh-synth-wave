@@ -22,11 +22,12 @@ struct CoreAudioContext {
  * TODO(nico): Figure out way to pass native buffer if buffer.format
  * matches native.  Avoids copy altogether
  */
-static OSStatus
-nativeCallback(void *inRefCon, // ← CoreAudio gives us back what we registered
-               AudioUnitRenderActionFlags * /*ioActionFlags*/,
-               const AudioTimeStamp * /*inTimeStamp*/, UInt32 /*inBusNumber*/,
-               UInt32 inNumberFrames, AudioBufferList *ioData) {
+static OSStatus nativeCallback(void* inRefCon, // ← CoreAudio gives us back what we registered
+                               AudioUnitRenderActionFlags* /*ioActionFlags*/,
+                               const AudioTimeStamp* /*inTimeStamp*/,
+                               UInt32 /*inBusNumber*/,
+                               UInt32 inNumberFrames,
+                               AudioBufferList* ioData) {
 
   auto sessionPtr = static_cast<audio_io::hAudioSession>(inRefCon);
 
@@ -58,8 +59,8 @@ nativeCallback(void *inRefCon, // ← CoreAudio gives us back what we registered
     assert(sessionPtr->buffer.channelPtrs);
 
     for (size_t ch = 0; ch < sessionPtr->buffer.numChannels; ch++) {
-      float *dstPtr = static_cast<float *>(ioData->mBuffers[ch].mData);
-      float *srcPtr = sessionPtr->buffer.channelPtrs[ch];
+      float* dstPtr = static_cast<float*>(ioData->mBuffers[ch].mData);
+      float* srcPtr = sessionPtr->buffer.channelPtrs[ch];
 
       assert(dstPtr);
 
@@ -73,8 +74,8 @@ nativeCallback(void *inRefCon, // ← CoreAudio gives us back what we registered
     size_t stride = sessionPtr->buffer.numChannels;
 
     for (size_t ch = 0; ch < sessionPtr->buffer.numChannels; ch++) {
-      float *dstPtr = static_cast<float *>(ioData->mBuffers[ch].mData);
-      float *srcPtr = sessionPtr->buffer.interleavedPtr + ch;
+      float* dstPtr = static_cast<float*>(ioData->mBuffers[ch].mData);
+      float* srcPtr = sessionPtr->buffer.interleavedPtr + ch;
 
       assert(dstPtr);
 
@@ -93,19 +94,18 @@ nativeCallback(void *inRefCon, // ← CoreAudio gives us back what we registered
  * data to AudioStreamBasicDescription, which is required for
  * Core Audio setup
  */
-AudioStreamBasicDescription configToASBD(const audio_io::Config &config) {
+AudioStreamBasicDescription configToASBD(const audio_io::Config& config) {
 
   // Create Core Audio stream description based on user's config
   AudioStreamBasicDescription asbd{};
   asbd.mSampleRate = config.sampleRate;
   asbd.mFormatID = kAudioFormatLinearPCM;
-  asbd.mFormatFlags = kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked |
-                      kAudioFormatFlagIsNonInterleaved;
+  asbd.mFormatFlags =
+      kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked | kAudioFormatFlagIsNonInterleaved;
   asbd.mBitsPerChannel = 32;
   asbd.mChannelsPerFrame = config.numChannels;
-  asbd.mFramesPerPacket = 1; // Always 1 for PCM
-  asbd.mBytesPerFrame =
-      asbd.mBitsPerChannel / 8; // Times nChannels if interleaved
+  asbd.mFramesPerPacket = 1;                      // Always 1 for PCM
+  asbd.mBytesPerFrame = asbd.mBitsPerChannel / 8; // Times nChannels if interleaved
   asbd.mBytesPerPacket = asbd.mBytesPerFrame * asbd.mFramesPerPacket;
 
   return asbd;
@@ -155,12 +155,14 @@ int coreAudioSetup(audio_io::hAudioSession sessionPtr) {
   // WARNING(nico-nunez):  MUST DISPOSE __audioUnit__ ON ERROR!!!!
 
   // 4. Configure stream format
-  AudioStreamBasicDescription streamDescription{
-      configToASBD(sessionPtr->userConfig)};
+  AudioStreamBasicDescription streamDescription{configToASBD(sessionPtr->userConfig)};
 
-  OSStatus streamDescPropErr = AudioUnitSetProperty(
-      audioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0,
-      &streamDescription, sizeof(streamDescription));
+  OSStatus streamDescPropErr = AudioUnitSetProperty(audioUnit,
+                                                    kAudioUnitProperty_StreamFormat,
+                                                    kAudioUnitScope_Input,
+                                                    0,
+                                                    &streamDescription,
+                                                    sizeof(streamDescription));
 
   if (streamDescPropErr) {
     printf("Error occured with AudioUnitSetProperty: %i\n", streamDescPropErr);
@@ -169,7 +171,7 @@ int coreAudioSetup(audio_io::hAudioSession sessionPtr) {
   }
 
   // 4a. Create and set Core Audio context to Handle context
-  auto *platformContext = new CoreAudioContext{};
+  auto* platformContext = new CoreAudioContext{};
   platformContext->audioUnit = audioUnit;
 
   sessionPtr->platformContext = platformContext;
@@ -181,9 +183,12 @@ int coreAudioSetup(audio_io::hAudioSession sessionPtr) {
   callbackStruct.inputProc = nativeCallback;
   callbackStruct.inputProcRefCon = sessionPtr;
 
-  OSStatus callbackPropErr = AudioUnitSetProperty(
-      audioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, 0,
-      &callbackStruct, sizeof(callbackStruct));
+  OSStatus callbackPropErr = AudioUnitSetProperty(audioUnit,
+                                                  kAudioUnitProperty_SetRenderCallback,
+                                                  kAudioUnitScope_Input,
+                                                  0,
+                                                  &callbackStruct,
+                                                  sizeof(callbackStruct));
 
   if (callbackPropErr) {
     printf("Error occured with AudioUnitSetProperty: %i\n", callbackPropErr);
@@ -210,7 +215,7 @@ int coreAudioSetup(audio_io::hAudioSession sessionPtr) {
 
 // ============ (Core Audio Methods) ============
 int coreAudioStart(audio_io::hAudioSession sessionPtr) {
-  auto *ctx = static_cast<CoreAudioContext *>(sessionPtr->platformContext);
+  auto* ctx = static_cast<CoreAudioContext*>(sessionPtr->platformContext);
   if (!ctx) {
     printf("Unable to [start] AudioSession");
     return 1; // TODO(nico-nunez): return better error
@@ -219,7 +224,7 @@ int coreAudioStart(audio_io::hAudioSession sessionPtr) {
 }
 
 int coreAudioStop(audio_io::hAudioSession sessionPtr) {
-  auto *ctx = static_cast<CoreAudioContext *>(sessionPtr->platformContext);
+  auto* ctx = static_cast<CoreAudioContext*>(sessionPtr->platformContext);
   if (!ctx) {
     printf("Unable to [stop] AudioSession");
     return 1; // TODO(nico-nunez): return better error
@@ -228,7 +233,7 @@ int coreAudioStop(audio_io::hAudioSession sessionPtr) {
 }
 
 int coreAudioCleanup(audio_io::hAudioSession sessionPtr) {
-  auto *ctx = static_cast<CoreAudioContext *>(sessionPtr->platformContext);
+  auto* ctx = static_cast<CoreAudioContext*>(sessionPtr->platformContext);
   if (!ctx) {
     printf("Platform context does not exit [cleanup]");
     return 1; // TODO(nico-nunez): return better error

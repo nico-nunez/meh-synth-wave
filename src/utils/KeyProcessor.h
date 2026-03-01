@@ -11,8 +11,8 @@ struct SynthSession;
 } // namespace synth_io
 
 namespace synth::utils {
-using hMidiSession = device_io::MidiSession *;
-using hSynthSession = synth_io::SynthSession *;
+using hMidiSession = device_io::MidiSession*;
+using hSynthSession = synth_io::SynthSession*;
 
 hMidiSession initMidiSession(hSynthSession);
 
