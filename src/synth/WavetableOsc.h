@@ -5,6 +5,7 @@
 #include "dsp/Wavetable.h"
 
 #include <cstdint>
+#include <cstring>
 
 namespace synth::wavetable::osc {
 
@@ -43,13 +44,6 @@ struct WavetableOscillator {
   int8_t octaveOffset = 0;
   float detuneAmount = 0.0f;
   bool enabled = true;
-};
-
-struct WavetableOscModState {
-  float osc1[MAX_VOICES] = {};
-  float osc2[MAX_VOICES] = {};
-  float osc3[MAX_VOICES] = {};
-  float osc4[MAX_VOICES] = {};
 };
 
 void initOscillator(WavetableOscillator& osc,
@@ -91,16 +85,58 @@ float processOscillator(WavetableOscillator& osc,
                         float fmPhaseOffset,
                         float pitchIncrement);
 
+// =====================
+// FM (phase modulation)
+// =====================
+
+struct WavetableOscModState {
+  float osc1[MAX_VOICES] = {};
+  float osc2[MAX_VOICES] = {};
+  float osc3[MAX_VOICES] = {};
+  float osc4[MAX_VOICES] = {};
+
+  float osc1Feedback[MAX_VOICES] = {};
+  float osc2Feedback[MAX_VOICES] = {};
+  float osc3Feedback[MAX_VOICES] = {};
+  float osc4Feedback[MAX_VOICES] = {};
+};
+
 void resetOscModState(WavetableOscModState& modState, uint32_t voiceIndex);
 
-/* FM source lookup — reads previous sample's FM-affected output from
- * oscModOutputs. Lives on VoicePool, not on WavetableOscillator (see
- * ASPIRATIONAL note above). All four values are already available before any
- * processOscillator call, so processing order is irrelevant. When fmSource ==
- * FMSource::None, returns 0.0f — the subsequent multiply by fmDepth collapses
- * to zero. Vital uses an explicit fmAmount == 0 branch to skip the lookup;
- * rely on the optimizer here, or add the branch if profiling shows cost.
- */
-float getFmSourceValue(WavetableOscModState& modState, uint32_t voiceIndex, FMSource src);
+float getFmInputValue(WavetableOscModState& modState,
+                      uint32_t voiceIndex,
+                      FMSource src,
+                      FMSource dest);
+
+// ===================
+// Serialization
+// ===================
+
+struct FMSourceMapping {
+  const char* name;
+  FMSource src;
+};
+
+inline constexpr FMSourceMapping fmSourceMappings[] = {
+    {"none", FMSource::None},
+    {"osc1", FMSource::Osc1},
+    {"osc2", FMSource::Osc2},
+    {"osc3", FMSource::Osc3},
+    {"osc4", FMSource::Osc4},
+};
+
+inline FMSource parseFMSource(const char* name) {
+  for (const auto& m : fmSourceMappings)
+    if (std::strcmp(m.name, name) == 0)
+      return m.src;
+  return FMSource::None; // unknown strings → None
+}
+
+inline const char* fmSourceToString(FMSource src) {
+  for (const auto& m : fmSourceMappings)
+    if (m.src == src)
+      return m.name;
+  return "none";
+}
 
 } // namespace synth::wavetable::osc

@@ -146,18 +146,50 @@ void resetOscModState(WavetableOscModState& modState, uint32_t voiceIndex) {
   modState.osc2[voiceIndex] = 0.0f;
   modState.osc3[voiceIndex] = 0.0f;
   modState.osc4[voiceIndex] = 0.0f;
+
+  modState.osc1Feedback[voiceIndex] = 0.0f;
+  modState.osc2Feedback[voiceIndex] = 0.0f;
+  modState.osc3Feedback[voiceIndex] = 0.0f;
+  modState.osc4Feedback[voiceIndex] = 0.0f;
 }
 
-float getFmSourceValue(WavetableOscModState& modState, uint32_t voiceIndex, FMSource src) {
+float getFmInputValue(WavetableOscModState& modState,
+                      uint32_t voiceIndex,
+                      FMSource src,
+                      FMSource carrier) {
   switch (src) {
-  case FMSource::Osc1:
+  case FMSource::Osc1: {
+    if (carrier == FMSource::Osc1) {
+      float fb = 0.5f * (modState.osc1[voiceIndex] + modState.osc1Feedback[voiceIndex]);
+      modState.osc1Feedback[voiceIndex] = modState.osc1[voiceIndex];
+      return fb;
+    }
     return modState.osc1[voiceIndex];
-  case FMSource::Osc2:
+  }
+  case FMSource::Osc2: {
+    if (carrier == FMSource::Osc2) {
+      float fb = 0.5f * (modState.osc2[voiceIndex] + modState.osc2Feedback[voiceIndex]);
+      modState.osc2Feedback[voiceIndex] = modState.osc2[voiceIndex];
+      return fb;
+    }
     return modState.osc2[voiceIndex];
-  case FMSource::Osc3:
+  }
+  case FMSource::Osc3: {
+    if (carrier == FMSource::Osc3) {
+      float fb = 0.5f * (modState.osc3[voiceIndex] + modState.osc3Feedback[voiceIndex]);
+      modState.osc3Feedback[voiceIndex] = modState.osc3[voiceIndex];
+      return fb;
+    }
     return modState.osc3[voiceIndex];
-  case FMSource::Osc4:
+  }
+  case FMSource::Osc4: {
+    if (carrier == FMSource::Osc4) {
+      float fb = 0.5f * (modState.osc4[voiceIndex] + modState.osc4Feedback[voiceIndex]);
+      modState.osc4Feedback[voiceIndex] = modState.osc4[voiceIndex];
+      return fb;
+    }
     return modState.osc4[voiceIndex];
+  }
   default:
     return 0.0f;
   }
