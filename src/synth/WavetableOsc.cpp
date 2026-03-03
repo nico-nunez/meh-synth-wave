@@ -29,7 +29,7 @@ void initOscillator(WavetableOscillator& osc,
 // ================================
 void updateConfig(WavetableOscillator& osc, const WavetableOscConfig& config) {
   osc.bank = config.bank;
-  osc.scanPosition = config.scanPosition;
+  osc.scanPos = config.scanPos;
   osc.mixLevel = config.mixLevel;
   osc.fmDepth = config.fmDepth;
   osc.fmSource = config.fmSource;

@@ -3,6 +3,7 @@
 #include "Engine.h"
 #include "Envelope.h"
 #include "synth/Filters.h"
+#include "synth/LFO.h"
 #include "synth/ParamRanges.h"
 
 #include <cmath>
@@ -61,20 +62,26 @@ void bindOscillator(ParamBinding* bindings,
   bindings[baseId + 2] =
       makeParamBinding(&osc.octaveOffset, ranges::osc::OCTAVE_MIN, ranges::osc::OCTAVE_MAX);
   bindings[baseId + 3] =
-      makeParamBinding(&osc.scanPosition, ranges::osc::SCAN_POS_MIN, ranges::osc::SCAN_POS_MAX);
+      makeParamBinding(&osc.scanPos, ranges::osc::SCAN_POS_MIN, ranges::osc::SCAN_POS_MAX);
   bindings[baseId + 4] =
       makeParamBinding(&osc.fmDepth, ranges::osc::FM_DEPTH_MIN, ranges::osc::FM_DEPTH_MAX);
   bindings[baseId + 5] = makeParamBinding(&osc.enabled);
 }
 
 // Noise Oscillator Binding
-void bindNoiseOscillator(ParamBinding* bindings,
-                         ParamID baseId,
-                         noise_osc::NoiseOscillator& noise) {
+void bindNoise(ParamBinding* bindings, ParamID baseId, noise::Noise& noise) {
   bindings[baseId + 0] = makeParamBinding(&noise.mixLevel,
                                           ranges::osc::noise::MIX_LEVEL_MIN,
                                           ranges::osc::noise::MIX_LEVEL_MAX);
   bindings[baseId + 1] = makeParamBinding(&noise.enabled);
+}
+
+// LFO Binding
+void bindLFO(ParamBinding* bindings, ParamID baseId, lfo::LFO& lfo) {
+  bindings[baseId + 0] = makeParamBinding(&lfo.rate, ranges::lfo::RATE_MIN, ranges::lfo::RATE_MAX);
+  bindings[baseId + 1] =
+      makeParamBinding(&lfo.amplitude, ranges::lfo::AMPLITUDE_MIN, ranges::lfo::AMPLITUDE_MAX);
+  bindings[baseId + 2] = makeParamBinding(&lfo.retrigger);
 }
 
 // Filter Bindings
@@ -167,7 +174,7 @@ void initParamBindings(Engine& engine) {
   bindOscillator(engine.paramBindings, OSC3_MIX_LEVEL, engine.voicePool.osc3);
   bindOscillator(engine.paramBindings, OSC4_MIX_LEVEL, engine.voicePool.osc4);
 
-  bindNoiseOscillator(engine.paramBindings, NOISE_OSC_MIX_LEVEL, engine.voicePool.noiseOsc);
+  bindNoise(engine.paramBindings, NOISE_MIX_LEVEL, engine.voicePool.noise);
 
   // Envelopes
   bindEnvelope(engine.paramBindings, AMP_ENV_ATTACK, engine.voicePool.ampEnv);
@@ -176,6 +183,11 @@ void initParamBindings(Engine& engine) {
   // Filters
   bindSVFilter(engine.paramBindings, SVF_ENABLED, engine.voicePool.svf);
   bindLadderFilter(engine.paramBindings, LADDER_ENABLED, engine.voicePool.ladder);
+
+  // LFOs (global)
+  bindLFO(engine.paramBindings, LFO1_RATE, engine.voicePool.lfo1);
+  bindLFO(engine.paramBindings, LFO2_RATE, engine.voicePool.lfo2);
+  bindLFO(engine.paramBindings, LFO3_RATE, engine.voicePool.lfo3);
 
   // Voice Pool
   engine.paramBindings[MASTER_GAIN] = makeParamBinding(&engine.voicePool.masterGain,

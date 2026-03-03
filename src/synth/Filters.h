@@ -47,8 +47,6 @@ struct LadderFilter {
 
 // ==== FILTER HELPERS ====
 
-float computeEffectiveCutoff(float baseCutoff, float cutoffModOctaves);
-
 // ==== SVF Helpers ====
 void initSVFilter(SVFilter& filter, size_t voiceIndex);
 

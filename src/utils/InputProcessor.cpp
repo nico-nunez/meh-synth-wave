@@ -2,7 +2,7 @@
 
 #include "synth/Engine.h"
 #include "synth/ModMatrix.h"
-#include "synth/NoiseOscillator.h"
+#include "synth/Noise.h"
 #include "synth/ParamBindings.h"
 #include "synth/WavetableBanks.h"
 #include "synth/WavetableOsc.h"
@@ -91,16 +91,18 @@ FMSource parseFMSource(const char* s) {
   return FMSource::None;
 }
 
-using NoiseType = noise_osc::NoiseType;
+using NoiseType = noise::NoiseType;
 NoiseType parseNoiseType(const char* s) {
   if (strcasecmp(s, "pink") == 0)
-    return noise_osc::NoiseType::Pink;
-  return noise_osc::NoiseType::White;
+    return noise::NoiseType::Pink;
+  return noise::NoiseType::White;
 }
 
 } // namespace
 
 void parseCommand(const std::string& line, Engine& engine, s_io::hSynthSession session) {
+  using synth::wavetable::banks::getBankByName;
+
   std::istringstream iss(line);
   std::string cmd;
   iss >> cmd;
@@ -117,7 +119,7 @@ void parseCommand(const std::string& line, Engine& engine, s_io::hSynthSession s
       std::string value;
       iss >> value;
 
-      auto* bank = synth::wavetable::banks::getBankByName(value.c_str());
+      auto* bank = getBankByName(value.c_str());
 
       if (bank)
         engine.voicePool.osc1.bank = bank;
@@ -143,7 +145,7 @@ void parseCommand(const std::string& line, Engine& engine, s_io::hSynthSession s
       std::string value;
       iss >> value;
 
-      auto* bank = synth::wavetable::banks::getBankByName(value.c_str());
+      auto* bank = getBankByName(value.c_str());
 
       if (bank)
         engine.voicePool.osc3.bank = bank;
@@ -156,7 +158,7 @@ void parseCommand(const std::string& line, Engine& engine, s_io::hSynthSession s
       std::string value;
       iss >> value;
 
-      auto* bank = synth::wavetable::banks::getBankByName(value.c_str());
+      auto* bank = getBankByName(value.c_str());
 
       if (bank)
         engine.voicePool.osc4.bank = bank;
@@ -194,10 +196,55 @@ void parseCommand(const std::string& line, Engine& engine, s_io::hSynthSession s
       return;
     }
 
-    if (paramName == "noiseOsc.type") {
+    if (paramName == "noise.type") {
       std::string value;
       iss >> value;
-      engine.voicePool.noiseOsc.type = parseNoiseType(value.c_str());
+      engine.voicePool.noise.type = parseNoiseType(value.c_str());
+      return;
+    }
+
+    if (paramName == "lfo1.bank") {
+      std::string value;
+      iss >> value;
+      if (value == "sah")
+        engine.voicePool.lfo1.bank = nullptr; // S&H sentinel
+      else {
+        auto* bank = getBankByName(value.c_str());
+        if (bank)
+          engine.voicePool.lfo1.bank = bank;
+        else
+          printf("unknown bank: %s\n", value.c_str());
+      }
+      return;
+    }
+
+    if (paramName == "lfo2.bank") {
+      std::string value;
+      iss >> value;
+      if (value == "sah")
+        engine.voicePool.lfo2.bank = nullptr; // S&H sentinel
+      else {
+        auto* bank = getBankByName(value.c_str());
+        if (bank)
+          engine.voicePool.lfo2.bank = bank;
+        else
+          printf("unknown bank: %s\n", value.c_str());
+      }
+      return;
+    }
+
+    if (paramName == "lfo3.bank") {
+      std::string value;
+      iss >> value;
+      if (value == "sah")
+        engine.voicePool.lfo3.bank = nullptr; // S&H sentinel
+      else {
+        auto* bank = getBankByName(value.c_str());
+        if (bank)
+          engine.voicePool.lfo3.bank = bank;
+        else
+          printf("unknown bank: %s\n", value.c_str());
+      }
       return;
     }
 

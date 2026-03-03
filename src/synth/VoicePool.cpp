@@ -1,12 +1,13 @@
 #include "VoicePool.h"
 
-#include "synth/NoiseOscillator.h"
-#include "synth/WavetableBanks.h"
-
-#include "dsp/Effects.h"
-#include "dsp/Math.h"
+#include "synth/LFO.h"
+#include "synth/Noise.h"
 #include "synth/ParamRanges.h"
+#include "synth/WavetableBanks.h"
 #include "synth/WavetableOsc.h"
+
+#include "dsp/Filters.h"
+#include "dsp/Math.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -33,10 +34,10 @@ void updateVoicePoolConfig(VoicePool& pool, const VoicePoolConfig& config) {
   osc::updateConfig(pool.osc3, config.osc3);
   osc::updateConfig(pool.osc4, config.osc4);
 
-  noise_osc::updateConfig(pool.noiseOsc, config.noiseOsc);
+  noise::updateConfig(pool.noise, config.noise);
 
   int enabledCount = pool.osc1.enabled + pool.osc2.enabled + pool.osc3.enabled + pool.osc4.enabled +
-                     pool.noiseOsc.enabled;
+                     pool.noise.enabled;
   pool.oscMixGain = (enabledCount > 0) ? 1.0f / static_cast<float>(enabledCount) : 1.0f;
 
   filters::updateSVFCoefficients(pool.svf, pool.invSampleRate);
@@ -202,6 +203,15 @@ void handleNoteOn(VoicePool& pool,
 
   initializeVoice(pool, voiceIndex, midiNote, velocity, noteOnTime, sampleRate);
 
+  if (pool.activeCount == 0) {
+    if (pool.lfo1.retrigger)
+      pool.lfo1.phase = 0.0f;
+    if (pool.lfo2.retrigger)
+      pool.lfo2.phase = 0.0f;
+    if (pool.lfo3.retrigger)
+      pool.lfo3.phase = 0.0f;
+  }
+
   addActiveIndex(pool, voiceIndex);
 }
 
@@ -243,6 +253,10 @@ void preProcessBlock(VoicePool& pool, size_t numSamples) {
       if (route.src == ModSrc::NoSrc || route.dest == ModDest::NoDest)
         continue;
 
+      // LFO sources are sample-rate — handled in the hot loop, not here
+      if (route.src == ModSrc::LFO1 || route.src == ModSrc::LFO2 || route.src == ModSrc::LFO3)
+        continue;
+
       modDests[route.dest] += modSrcs[route.src] * route.amount;
     }
 
@@ -258,17 +272,83 @@ void preProcessBlock(VoicePool& pool, size_t numSamples) {
   }
 };
 
+// Process LFOs (once per sample - global)
+void processLFOs(VoicePool& pool) {
+  float effectiveRate1 = pool.lfo1.rate + pool.modMatrix.destValues[ModDest::LFO1Rate][0];
+  float effectiveRate2 = pool.lfo2.rate + pool.modMatrix.destValues[ModDest::LFO2Rate][0];
+  float effectiveRate3 = pool.lfo3.rate + pool.modMatrix.destValues[ModDest::LFO3Rate][0];
+
+  float effectiveAmp1 = pool.lfo1.amplitude + pool.modMatrix.destValues[ModDest::LFO1Amplitude][0];
+  float effectiveAmp2 = pool.lfo2.amplitude + pool.modMatrix.destValues[ModDest::LFO2Amplitude][0];
+  float effectiveAmp3 = pool.lfo3.amplitude + pool.modMatrix.destValues[ModDest::LFO3Amplitude][0];
+
+  // Apply LFO-to-LFO contributions — the previous sample's LFO outputs.
+  // On the first sample it's zero-initialized so has no effect.
+  // From sample 1 onward it holds real values written in Step 3 last iteration.
+  for (uint8_t r = 0; r < pool.modMatrix.count; r++) {
+
+    const ModRoute& route = pool.modMatrix.routes[r];
+
+    if (route.src == ModSrc::LFO1 || route.src == ModSrc::LFO2 || route.src == ModSrc::LFO3) {
+      float srcVal = 0;
+      switch (route.src) {
+      case ModSrc::LFO1:
+        srcVal = pool.lfoModState.lfo1;
+        break;
+      case ModSrc::LFO2:
+        srcVal = pool.lfoModState.lfo2;
+        break;
+      case ModSrc::LFO3:
+        srcVal = pool.lfoModState.lfo3;
+        break;
+      default:
+        break;
+      }
+
+      switch (route.dest) {
+      case ModDest::LFO1Rate:
+        effectiveRate1 += srcVal * route.amount;
+        break;
+      case ModDest::LFO2Rate:
+        effectiveRate2 += srcVal * route.amount;
+        break;
+      case ModDest::LFO3Rate:
+        effectiveRate3 += srcVal * route.amount;
+        break;
+
+      case ModDest::LFO1Amplitude:
+        effectiveAmp1 += srcVal * route.amount;
+        break;
+      case ModDest::LFO2Amplitude:
+        effectiveAmp2 += srcVal * route.amount;
+        break;
+      case ModDest::LFO3Amplitude:
+        effectiveAmp3 += srcVal * route.amount;
+        break;
+
+      default:
+        break;
+      }
+    }
+  }
+
+  pool.lfoModState.lfo1 = advanceLFO(pool.lfo1, pool.invSampleRate, effectiveRate1, effectiveAmp1);
+  pool.lfoModState.lfo2 = advanceLFO(pool.lfo2, pool.invSampleRate, effectiveRate2, effectiveAmp2);
+  pool.lfoModState.lfo3 = advanceLFO(pool.lfo3, pool.invSampleRate, effectiveRate3, effectiveAmp3);
+}
+
 // Calculate interpolation for pitch increment (hot-loop)
-float interpolatePitchInc(WavetableOsc& osc,
-                          ModMatrix& matrix,
+float interpolatePitchInc(const WavetableOsc& osc,
+                          const ModMatrix& matrix,
+                          const float* lfoContribs,
                           ModDest dest,
                           uint32_t voiceIndex,
                           uint32_t sampleIndex) {
   const uint32_t v = voiceIndex;
   const uint32_t s = sampleIndex;
 
-  float pitchMod =
-      matrix.prevDestValues[dest][v] + (matrix.destStepValues[dest][v] * static_cast<float>(s));
+  float pitchMod = matrix.prevDestValues[dest][v] +
+                   (matrix.destStepValues[dest][v] * static_cast<float>(s)) + lfoContribs[dest];
 
   // Calculate and return modulated phase increment
   return osc.phaseIncrements[v] * dsp::math::semitonesToFreqRatio(pitchMod);
@@ -284,7 +364,7 @@ float processAndMixOscillators(VoicePool& pool, uint32_t voiceIndex, uint32_t sa
   const uint32_t s = sampleIndex;
 
   auto& modMatrix = pool.modMatrix;
-  auto& destValues = pool.modMatrix.destValues;
+  auto& dest = pool.modMatrix.destValues;
 
   auto& osc1 = pool.osc1;
   auto& osc2 = pool.osc2;
@@ -292,25 +372,35 @@ float processAndMixOscillators(VoicePool& pool, uint32_t voiceIndex, uint32_t sa
   auto& osc4 = pool.osc4;
   auto& oscModState = pool.oscModState;
 
-  float pitchInc1 = interpolatePitchInc(osc1, modMatrix, ModDest::Osc1Pitch, v, s);
-  float pitchInc2 = interpolatePitchInc(osc2, modMatrix, ModDest::Osc2Pitch, v, s);
-  float pitchInc3 = interpolatePitchInc(osc3, modMatrix, ModDest::Osc3Pitch, v, s);
-  float pitchInc4 = interpolatePitchInc(osc4, modMatrix, ModDest::Osc4Pitch, v, s);
+  auto& lfo = pool.lfoModState.contribs;
+
+  float pitchInc1 = interpolatePitchInc(osc1, modMatrix, lfo, ModDest::Osc1Pitch, v, s);
+  float pitchInc2 = interpolatePitchInc(osc2, modMatrix, lfo, ModDest::Osc2Pitch, v, s);
+  float pitchInc3 = interpolatePitchInc(osc3, modMatrix, lfo, ModDest::Osc3Pitch, v, s);
+  float pitchInc4 = interpolatePitchInc(osc4, modMatrix, lfo, ModDest::Osc4Pitch, v, s);
 
   float mip1 = osc::selectMipLevel(pitchInc1 * dsp_wt::TABLE_SIZE_F);
   float mip2 = osc::selectMipLevel(pitchInc2 * dsp_wt::TABLE_SIZE_F);
   float mip3 = osc::selectMipLevel(pitchInc3 * dsp_wt::TABLE_SIZE_F);
   float mip4 = osc::selectMipLevel(pitchInc4 * dsp_wt::TABLE_SIZE_F);
 
-  float scan1 = clampScanPos(osc1.scanPosition + destValues[ModDest::Osc1ScanPos][v]);
-  float scan2 = clampScanPos(osc2.scanPosition + destValues[ModDest::Osc2ScanPos][v]);
-  float scan3 = clampScanPos(osc3.scanPosition + destValues[ModDest::Osc3ScanPos][v]);
-  float scan4 = clampScanPos(osc4.scanPosition + destValues[ModDest::Osc4ScanPos][v]);
+  float scan1 =
+      clampScanPos(osc1.scanPos + dest[ModDest::Osc1ScanPos][v] + lfo[ModDest::Osc1ScanPos]);
+  float scan2 =
+      clampScanPos(osc2.scanPos + dest[ModDest::Osc2ScanPos][v] + lfo[ModDest::Osc2ScanPos]);
+  float scan3 =
+      clampScanPos(osc3.scanPos + dest[ModDest::Osc3ScanPos][v] + lfo[ModDest::Osc3ScanPos]);
+  float scan4 =
+      clampScanPos(osc4.scanPos + dest[ModDest::Osc4ScanPos][v] + lfo[ModDest::Osc4ScanPos]);
 
-  float fmDepth1 = max(0.0f, osc1.fmDepth + destValues[ModDest::Osc1FMDepth][v]);
-  float fmDepth2 = max(0.0f, osc2.fmDepth + destValues[ModDest::Osc2FMDepth][v]);
-  float fmDepth3 = max(0.0f, osc3.fmDepth + destValues[ModDest::Osc3FMDepth][v]);
-  float fmDepth4 = max(0.0f, osc4.fmDepth + destValues[ModDest::Osc4FMDepth][v]);
+  float fmDepth1 =
+      max(0.0f, osc1.fmDepth + dest[ModDest::Osc1FMDepth][v] + lfo[ModDest::Osc1FMDepth]);
+  float fmDepth2 =
+      max(0.0f, osc2.fmDepth + dest[ModDest::Osc2FMDepth][v] + lfo[ModDest::Osc2FMDepth]);
+  float fmDepth3 =
+      max(0.0f, osc3.fmDepth + dest[ModDest::Osc3FMDepth][v] + lfo[ModDest::Osc3FMDepth]);
+  float fmDepth4 =
+      max(0.0f, osc4.fmDepth + dest[ModDest::Osc4FMDepth][v] + lfo[ModDest::Osc4FMDepth]);
 
   float fm1 = osc::getFmInputValue(oscModState, v, osc1.fmSource, FMSource::Osc1) * fmDepth1;
   float fm2 = osc::getFmInputValue(oscModState, v, osc2.fmSource, FMSource::Osc2) * fmDepth2;
@@ -327,12 +417,12 @@ float processAndMixOscillators(VoicePool& pool, uint32_t voiceIndex, uint32_t sa
   oscModState.osc3[v] = out3;
   oscModState.osc4[v] = out4;
 
-  float mix1 = max(0.0f, osc1.mixLevel + destValues[ModDest::Osc1Mix][v]);
-  float mix2 = max(0.0f, osc2.mixLevel + destValues[ModDest::Osc2Mix][v]);
-  float mix3 = max(0.0f, osc3.mixLevel + destValues[ModDest::Osc3Mix][v]);
-  float mix4 = max(0.0f, osc4.mixLevel + destValues[ModDest::Osc4Mix][v]);
+  float mix1 = max(0.0f, osc1.mixLevel + dest[ModDest::Osc1Mix][v] + lfo[ModDest::Osc1Mix]);
+  float mix2 = max(0.0f, osc2.mixLevel + dest[ModDest::Osc2Mix][v] + lfo[ModDest::Osc2Mix]);
+  float mix3 = max(0.0f, osc3.mixLevel + dest[ModDest::Osc3Mix][v] + lfo[ModDest::Osc3Mix]);
+  float mix4 = max(0.0f, osc4.mixLevel + dest[ModDest::Osc4Mix][v] + lfo[ModDest::Osc4Mix]);
 
-  float noiseOut = noise_osc::processNoise(pool.noiseOsc);
+  float noiseOut = noise::processNoise(pool.noise);
 
   // no separate mix multiplier for noiseOut — already scaled inside processNoise
   return (out1 * mix1 + out2 * mix2 + out3 * mix3 + out4 * mix4 + noiseOut) * pool.oscMixGain;
@@ -365,12 +455,42 @@ void processVoices(VoicePool& pool, float* output, size_t numSamples) {
 
   auto& destValues = pool.modMatrix.destValues;
 
+  auto& lfoContribs = pool.lfoModState.contribs;
+
   // ==== Set and process Mod Matrix values (block-rate) ====
   preProcessBlock(pool, numSamples);
 
   // ==== Calculate each sample value (audio-rate) ====
   for (uint32_t sIndex = 0; sIndex < numSamples; sIndex++) {
     float sample = 0.0f;
+
+    processLFOs(pool);
+
+    // ---- Step 4: Compute audio-destination contributions ----
+    // Global LFOs: all active voices read the same lfoContribs[] for this sample.
+    // LFO rate/amplitude destinations are excluded — already handled in Step 1.
+    lfo::clearContribs(pool.lfoModState);
+
+    for (uint8_t r = 0; r < pool.modMatrix.count; r++) {
+      const ModRoute& route = pool.modMatrix.routes[r];
+      if (route.src == ModSrc::NoSrc || route.dest == ModDest::NoDest)
+        continue;
+
+      // Skip LFO parameter destinations — handled via lfoOutputs in Step 1.
+      if (route.dest == ModDest::LFO1Rate || route.dest == ModDest::LFO1Amplitude ||
+          route.dest == ModDest::LFO2Rate || route.dest == ModDest::LFO2Amplitude ||
+          route.dest == ModDest::LFO3Rate || route.dest == ModDest::LFO3Amplitude)
+        continue;
+
+      if (route.src == ModSrc::LFO1)
+        lfoContribs[route.dest] += pool.lfoModState.lfo1 * route.amount;
+
+      else if (route.src == ModSrc::LFO2)
+        lfoContribs[route.dest] += pool.lfoModState.lfo2 * route.amount;
+
+      else if (route.src == ModSrc::LFO3)
+        lfoContribs[route.dest] += pool.lfoModState.lfo3 * route.amount;
+    }
 
     // Iterating backwards to more easily deal with swapping voices
     // that have/will become Idle/inactive after processing
@@ -379,9 +499,12 @@ void processVoices(VoicePool& pool, float* output, size_t numSamples) {
 
       float mixedOscs = processAndMixOscillators(pool, vIndex, sIndex);
 
-      float svfModCutoff =
-          filters::computeEffectiveCutoff(svf.cutoff, destValues[ModDest::SVFCutoff][vIndex]);
-      float svfModResonance = svf.resonance + destValues[ModDest::SVFResonance][vIndex];
+      float svfModCutoff = dsp::filters::modulateCutoff(svf.cutoff,
+                                                        destValues[ModDest::SVFCutoff][vIndex] +
+                                                            lfoContribs[ModDest::SVFCutoff]);
+
+      float svfModResonance = svf.resonance + destValues[ModDest::SVFResonance][vIndex] +
+                              lfoContribs[ModDest::SVFResonance];
 
       float filtered = filters::processSVFilter(svf,
                                                 mixedOscs,
@@ -390,8 +513,11 @@ void processVoices(VoicePool& pool, float* output, size_t numSamples) {
                                                 svfModResonance,
                                                 pool.invSampleRate);
       float ladderModCutoff =
-          filters::computeEffectiveCutoff(ladder.cutoff, destValues[ModDest::LadderCutoff][vIndex]);
-      float ladderModResonance = ladder.resonance + destValues[ModDest::LadderResonance][vIndex];
+          dsp::filters::modulateCutoff(ladder.cutoff,
+                                       destValues[ModDest::LadderCutoff][vIndex] +
+                                           lfoContribs[ModDest::LadderCutoff]);
+      float ladderModResonance = ladder.resonance + destValues[ModDest::LadderResonance][vIndex] +
+                                 lfoContribs[ModDest::LadderResonance];
 
       filtered = filters::processLadderFilter(ladder,
                                               filtered,
@@ -417,7 +543,7 @@ void processVoices(VoicePool& pool, float* output, size_t numSamples) {
 
     // TODO(nico): Basic soft clip for now.
     // Mainly for protection and not as an effect
-    output[sIndex] = dsp::effects::softClipFast(sample * pool.masterGain);
+    output[sIndex] = dsp::math::fastTanh(sample * pool.masterGain);
   }
 
   // Advance pitch interpolation state for next block

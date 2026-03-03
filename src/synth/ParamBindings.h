@@ -45,8 +45,8 @@ enum ParamID {
   OSC4_ENABLED,
 
   // Noise Oscillator
-  NOISE_OSC_MIX_LEVEL,
-  NOISE_OSC_ENABLED,
+  NOISE_MIX_LEVEL,
+  NOISE_ENABLED,
 
   // Amp Envelope
   AMP_ENV_ATTACK,
@@ -71,6 +71,19 @@ enum ParamID {
   LADDER_CUTOFF,
   LADDER_RESONANCE,
   LADDER_DRIVE,
+
+  // LFOs (global)
+  LFO1_RATE,
+  LFO1_AMPLITUDE,
+  LFO1_RETRIGGER,
+
+  LFO2_RATE,
+  LFO2_AMPLITUDE,
+  LFO2_RETRIGGER,
+
+  LFO3_RATE,
+  LFO3_AMPLITUDE,
+  LFO3_RETRIGGER,
 
   MASTER_GAIN,
 
@@ -132,8 +145,8 @@ constexpr ParamMapping PARAM_NAMES[] = {
     {OSC4_FM_DEPTH, "osc4.fmDepth", ParamValueType::FLOAT},
     {OSC4_ENABLED, "osc4.enabled", ParamValueType::BOOL},
 
-    {NOISE_OSC_MIX_LEVEL, "noiseOsc.mixLevel", ParamValueType::FLOAT},
-    {NOISE_OSC_ENABLED, "noiseOsc.enabled", ParamValueType::BOOL},
+    {NOISE_MIX_LEVEL, "noise.mixLevel", ParamValueType::FLOAT},
+    {NOISE_ENABLED, "noise.enabled", ParamValueType::BOOL},
 
     {AMP_ENV_ATTACK, "ampEnv.attack", ParamValueType::FLOAT},
     {AMP_ENV_DECAY, "ampEnv.decay", ParamValueType::FLOAT},
@@ -154,6 +167,18 @@ constexpr ParamMapping PARAM_NAMES[] = {
     {FILTER_ENV_DECAY, "filterEnv.decay", ParamValueType::FLOAT},
     {FILTER_ENV_SUSTAIN_LEVEL, "filterEnv.sustain", ParamValueType::FLOAT},
     {FILTER_ENV_RELEASE, "filterEnv.release", ParamValueType::FLOAT},
+
+    {LFO1_RATE, "lfo1.rate", ParamValueType::FLOAT},
+    {LFO1_AMPLITUDE, "lfo1.amplitude", ParamValueType::FLOAT},
+    {LFO1_RETRIGGER, "lfo1.retrigger", ParamValueType::BOOL},
+
+    {LFO2_RATE, "lfo2.rate", ParamValueType::FLOAT},
+    {LFO2_AMPLITUDE, "lfo2.amplitude", ParamValueType::FLOAT},
+    {LFO2_RETRIGGER, "lfo2.retrigger", ParamValueType::BOOL},
+
+    {LFO3_RATE, "lfo3.rate", ParamValueType::FLOAT},
+    {LFO3_AMPLITUDE, "lfo3.amplitude", ParamValueType::FLOAT},
+    {LFO3_RETRIGGER, "lfo3.retrigger", ParamValueType::BOOL},
 
     {MASTER_GAIN, "master.gain", ParamValueType::FLOAT},
 

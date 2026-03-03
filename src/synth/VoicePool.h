@@ -3,9 +3,10 @@
 #include "Envelope.h"
 #include "Filters.h"
 #include "ModMatrix.h"
-#include "NoiseOscillator.h"
+#include "Noise.h"
 #include "Types.h"
 #include "WavetableOsc.h"
+#include "synth/LFO.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -13,12 +14,15 @@
 namespace synth::voices {
 using Envelope = envelope::Envelope;
 
+using LFO = lfo::LFO;
+using LFOModState = lfo::LFOModState;
+
 using WavetableOsc = wavetable::osc::WavetableOscillator;
 using WavetableOscConfig = wavetable::osc::WavetableOscConfig;
 using WavetableOscModState = wavetable::osc::WavetableOscModState;
 
-using NoiseOsc = noise_osc::NoiseOscillator;
-using NoiseOscConfig = noise_osc::NoiseOscConfig;
+using Noise = noise::Noise;
+using NoiseConfig = noise::NoiseConfig;
 
 using ModMatrix = mod_matrix::ModMatrix;
 
@@ -28,7 +32,7 @@ struct VoicePoolConfig {
   WavetableOscConfig osc3{};
   WavetableOscConfig osc4{};
 
-  NoiseOscConfig noiseOsc{};
+  NoiseConfig noise{};
 
   float masterGain = 1.0f;
   float sampleRate = 48000.0f;
@@ -42,7 +46,13 @@ struct VoicePool {
   WavetableOsc osc3;
   WavetableOsc osc4;
 
-  NoiseOsc noiseOsc;
+  Noise noise;
+
+  LFO lfo1;
+  LFO lfo2;
+  LFO lfo3;
+
+  LFOModState lfoModState;
 
   // Reduce gain for multiple oscillators
   // TODO(nico): this needs to be tide to number of active oscs

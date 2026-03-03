@@ -31,6 +31,13 @@ float clampMixLevel(float mixLevel);
 
 } // namespace osc
 
+namespace lfo {
+inline constexpr float RATE_MIN = 0.0f;
+inline constexpr float RATE_MAX = 20.0f; // can be audio-rate
+inline constexpr float AMPLITUDE_MIN = 0.0f;
+inline constexpr float AMPLITUDE_MAX = 1.0f;
+} // namespace lfo
+
 namespace env {
 inline constexpr float TIME_MIN = 0.0f;     // ms
 inline constexpr float TIME_MAX = 10000.0f; // ms

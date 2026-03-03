@@ -2,14 +2,19 @@
 
 #include "dsp/Math.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace synth::filters {
 
-// ==== Filter Helpers ====
-float computeEffectiveCutoff(float baseCutoff, float cutoffModOctaves) {
-  return baseCutoff * dsp::math::fastExp2(cutoffModOctaves);
+namespace {
+
+float normalizeCutoff(float cutoffFreq, float invSampleRate) {
+  // keep below Nyquist
+  return std::min(cutoffFreq * invSampleRate, 0.49f);
 }
+
+} // namespace
 
 // ==== SVF Helpers ====
 void enableSVFilter(SVFilter& filter, bool enable) {
@@ -28,7 +33,8 @@ void initSVFilter(SVFilter& filter, size_t voiceIndex) {
 
 void updateSVFCoefficients(SVFilter& filter, float invSampleRate) {
   float Q = 0.5f + filter.resonance * 20.0f;
-  filter.coeffs = dsp::filters::computeSVFCoeffs(filter.cutoff, Q, invSampleRate);
+  float normalizedCutoff = normalizeCutoff(filter.cutoff, invSampleRate);
+  filter.coeffs = dsp::filters::computeSVFCoeffs(normalizedCutoff, Q);
 }
 
 // Use when NOT passing modulation values (cutoff and/or resonance)
@@ -65,10 +71,11 @@ float processSVFilter(SVFilter& filter,
   bool isModulated = std::abs(filter.cutoff - cutoffHz) > 0.001f ||
                      std::abs(filter.resonance - resonance) > 0.001f;
 
+  float normalizedCutoff = normalizeCutoff(cutoffHz, invSampleRate);
+
   SVFCoeffs coeffs =
-      isModulated
-          ? dsp::filters::computeSVFCoeffs(cutoffHz, 0.5f + resonance * 20.0f, invSampleRate)
-          : filter.coeffs;
+      isModulated ? dsp::filters::computeSVFCoeffs(normalizedCutoff, 0.5f + resonance * 20.0f)
+                  : filter.coeffs;
 
   SVFOutputs out = dsp::filters::processSVF(input, coeffs, filter.voiceStates[voiceIndex]);
 
@@ -101,7 +108,8 @@ void initLadderFilter(LadderFilter& filter, size_t voiceIndex) {
 }
 
 void updateLadderCoefficient(LadderFilter& filter, float invSampleRate) {
-  filter.coeff = 2.0f * std::sin(dsp::math::PI_F * filter.cutoff * invSampleRate);
+  float normalizedCutoff = normalizeCutoff(filter.cutoff, invSampleRate);
+  filter.coeff = 2.0f * dsp::math::fastSin(dsp::math::PI_F * normalizedCutoff);
 }
 
 // Use when NOT passing modulation values (cutoff and/or resonance)
@@ -133,8 +141,9 @@ float processLadderFilter(LadderFilter& filter,
   if (!filter.enabled)
     return input;
 
+  float normalizedCutoff = normalizeCutoff(cutoffHz, invSampleRate);
   float coeff = std::abs(filter.cutoff - cutoffHz) > 0.001f
-                    ? 2.0f * std::sin(dsp::math::PI_F * cutoffHz * invSampleRate)
+                    ? 2.0f * dsp::math::fastSin(dsp::math::PI_F * normalizedCutoff)
                     : filter.coeff;
 
   float res = resonance * 4.0f; // map 0–1 to Ladder's 0–4 range

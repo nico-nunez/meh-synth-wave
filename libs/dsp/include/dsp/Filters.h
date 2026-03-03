@@ -5,18 +5,6 @@ struct SVFOutputs {
   float lp, bp, hp;
 };
 
-// ==== Chamberlin ====
-// NOTE(nico): consider calculating per block instead of per sample
-// TODO(nico): probably remove this
-void updateFilterCoefficients(float& f, float& q, float cutoff, float resonance, float sampleRate);
-
-void processSVF(float input, float cutoff, float resonance, SVFOutputs& state, float sampleRate);
-
-// Access outputs from SVFState (maybe...)
-float getLowpass(const SVFOutputs& state);
-float getHighpass(const SVFOutputs& state);
-float getBandpass(const SVFOutputs& state);
-
 // ==== Cytomic / TPT Form ====
 struct SVFState {
   float ic1 = 0.0f; // integrator 1 capacitor state
@@ -28,7 +16,9 @@ struct SVFCoeffs {
   float k; // damping = 1/Q
 };
 
-SVFCoeffs computeSVFCoeffs(float cutoff, float Q, float invSampleRate);
+float modulateCutoff(float baseCutoff, float modulationOctaves);
+
+SVFCoeffs computeSVFCoeffs(float normalizedFreq, float Q);
 SVFOutputs processSVF(float input, const SVFCoeffs& c, SVFState& s);
 
 // ==== Ladder Filter (Moog style) ====
@@ -38,4 +28,20 @@ struct LadderState {
 
 float processLadder(float input, float f, float resonance, LadderState& st);
 float processLadderNonlinear(float input, float f, float resonance, float drive, LadderState& st);
+
+/* DC Block is a high-pass filter that removes DC offset (constant bias) from
+ * the audio signal.
+ *
+ * Why you need it:
+ * - Saturation creates DC - asymmetric clipping shifts the average value
+ * - Oscillator drift - numerical errors can accumulate over time
+ * - Speaker protection - DC can damage speakers (wasted power, cone movement)
+ *
+ * The coefficient (default 0.995):
+ * - Higher (0.999) = removes ONLY DC, preserves sub-bass
+ * - Lower (0.99) = more aggressive, removes more low frequencies
+ * - 0.995 is a good default - cutoff around 3-5 Hz
+ */
+float dcBlock(float sample, float& state, float coefficient = 0.995f);
+
 } // namespace dsp::filters

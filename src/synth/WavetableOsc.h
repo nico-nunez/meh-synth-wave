@@ -21,7 +21,7 @@ enum class FMSource : uint8_t {
 
 struct WavetableOscConfig {
   const WavetableBank* bank = nullptr;
-  float scanPosition = 0.0f;
+  float scanPos = 0.0f;
   float mixLevel = 1.0f;
   float fmDepth = 0.0f;
   FMSource fmSource = FMSource::None;
@@ -37,7 +37,7 @@ struct WavetableOscillator {
 
   // ==== Global settings for all voices in oscillator ====
   const WavetableBank* bank = nullptr;
-  float scanPosition = 0.0f;
+  float scanPos = 0.0f;
   float mixLevel = 1.0f;
   float fmDepth = 0.0f;
   FMSource fmSource = FMSource::None;
@@ -55,7 +55,7 @@ void updateConfig(WavetableOscillator& osc, const WavetableOscConfig& config);
 
 /* Read one sample with dual-mip linear interpolation.
  * mipF: continuous mip level from selectMipLevel() — fractional part drives mip
- * crossfade. effectiveScanPos: base scanPosition + mod delta, clamped [0,1] by
+ * crossfade. effectiveScanPos: base scanPos + mod delta, clamped [0,1] by
  * caller.
  *
  * fmPhaseOffset: phase displacement from FM in cycles (0.0 = no FM). Any

@@ -62,7 +62,17 @@ enum ModDest {
   Osc3FMDepth,
   Osc4FMDepth,
 
-  DEST_COUNT // used to size arrays, not a valid dest
+  // LFO Rate (Hz)
+  LFO1Rate,
+  LFO2Rate,
+  LFO3Rate,
+
+  // LFO Amplitude [-amplitude, +amplitude]
+  LFO1Amplitude,
+  LFO2Amplitude,
+  LFO3Amplitude,
+
+  DEST_COUNT
 };
 
 // ==== Modulation Routing ====
@@ -129,37 +139,42 @@ struct ModDestMapping {
 };
 inline constexpr ModDestMapping modDestMappings[ModDest::DEST_COUNT - 1] = // Not including "NoDest"
     {
-        // Filter Cutoff
+        // Filters
         {"svf.cutoff", ModDest::SVFCutoff},
         {"ladder.cutoff", ModDest::LadderCutoff},
 
-        // Filter Resonance
         {"svf.resonance", ModDest::SVFResonance},
         {"ladder.resonance", ModDest::LadderResonance},
 
-        // Oscillator Pitch
+        // Oscillators
         {"osc1.pitch", ModDest::Osc1Pitch},
         {"osc2.pitch", ModDest::Osc2Pitch},
         {"osc3.pitch", ModDest::Osc3Pitch},
         {"osc4.pitch", ModDest::Osc4Pitch},
 
-        // Oscillator Mix
         {"osc1.mixLevel", ModDest::Osc1Mix},
         {"osc2.mixLevel", ModDest::Osc2Mix},
         {"osc3.mixLevel", ModDest::Osc3Mix},
         {"osc4.mixLevel", ModDest::Osc4Mix},
 
-        // Oscillator Scan Position
         {"osc1.scanPos", ModDest::Osc1ScanPos},
         {"osc2.scanPos", ModDest::Osc2ScanPos},
         {"osc3.scanPos", ModDest::Osc3ScanPos},
         {"osc4.scanPos", ModDest::Osc4ScanPos},
 
-        // Oscillator FM Depth
         {"osc1.fmDepth", ModDest::Osc1FMDepth},
         {"osc2.fmDepth", ModDest::Osc2FMDepth},
         {"osc3.fmDepth", ModDest::Osc3FMDepth},
         {"osc4.fmDepth", ModDest::Osc4FMDepth},
+
+        // LFOs
+        {"lfo1.rate", ModDest::LFO1Rate},
+        {"lfo2.rate", ModDest::LFO2Rate},
+        {"lfo3.rate", ModDest::LFO3Rate},
+
+        {"lfo1.amplitude", ModDest::LFO1Amplitude},
+        {"lfo2.amplitude", ModDest::LFO2Amplitude},
+        {"lfo3.amplitude", ModDest::LFO3Amplitude},
 };
 
 void parseModCommand(std::istringstream& iss, ModMatrix& modMatrix);

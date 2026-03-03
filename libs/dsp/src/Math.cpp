@@ -1,9 +1,35 @@
 #include "dsp/Math.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 
 namespace dsp::math {
+float clampFastTan(float x) {
+  return std::clamp(x, -0.95f * HALF_PI_F, 0.95f * HALF_PI_F);
+}
+
+float fastTan(float x) {
+  const float x2 = x * x;
+  const float x4 = x2 * x2;
+  const float num = x * (1.0f - (1.0f / 9.0f) * x2 + (1.0f / 945.0f) * x4);
+  const float den = 1.0f - (4.0f / 9.0f) * x2 + (1.0f / 63.0f) * x4;
+  return num / den;
+}
+
+float fastTanh(float x) {
+  if (x > 3.0f)
+    return 1.0f;
+  if (x < -3.0f)
+    return -1.0f;
+  return (x * (27.0f + x * x)) / (27.0f + 9.0f * x * x);
+}
+
+float fastSin(float x) {
+  const float x2 = x * x;
+  return x * (1.0f - x2 * (1.0f / 6.0f - x2 * (1.0f / 120.0f - x2 * (1.0f / 5040.0f))));
+}
+
 // NOTE(nico): Modern compilers often auto-vectorize std::exp2f using SIMD
 // instructions (like AVX or SSE), which can sometimes outperform manual
 // bit-hacks on modern CPUs.
