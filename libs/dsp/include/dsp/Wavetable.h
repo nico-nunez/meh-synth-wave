@@ -6,10 +6,6 @@ namespace dsp::wavetable {
 inline constexpr uint32_t TABLE_SIZE = 2048; // must be a power of 2
 inline constexpr float TABLE_SIZE_F = static_cast<float>(TABLE_SIZE);
 
-// 2× resolution (may get tossed)
-inline constexpr uint32_t TABLE_SIZE_HI_RES = 4096;
-inline constexpr float TABLE_SIZE_HI_RES_F = static_cast<float>(TABLE_SIZE_HI_RES);
-
 // covers ~11 octaves (MIDI 0–127 is ~10.5)
 inline constexpr uint8_t MAX_MIP_LEVELS = 11;
 
@@ -36,5 +32,28 @@ bool destroyWavetableBank(WavetableBank* bank);
 
 // Linear table lookup — phase is float in [0, TABLE_SIZE_F)
 float readTable(const float* table, float phase);
+
+/* Returns a continuous float mip level for the given phase increment.
+ * phaseIncrement must be in TABLE_SIZE units (table positions/sample):
+ * pass osc.phaseIncrements[v] * TABLE_SIZE_F  (or the interpolated
+ * equivalent) Fractional part is the blend weight between mip floor and
+ * ceiling. Call per-sample from the interpolated pitch increment — not just at
+ * note-on.
+ */
+float selectMipLevel(float phaseIncrement);
+
+float readWavetable(const WavetableBank* bank,
+                    float phase,
+                    float mipF,
+                    float effectiveScanPos,
+                    float fmPhaseOffset);
+
+// Process oscillator (read table and increment phase)
+float processWavetableOsc(const WavetableBank* bank,
+                          float& phase,
+                          float mipF,
+                          float effectiveScanPos,
+                          float fmPhaseOffset,
+                          float pitchIncrement);
 
 } // namespace dsp::wavetable

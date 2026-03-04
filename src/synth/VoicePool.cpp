@@ -1,5 +1,6 @@
 #include "VoicePool.h"
 
+#include "dsp/Wavetable.h"
 #include "synth/LFO.h"
 #include "synth/Noise.h"
 #include "synth/ParamRanges.h"
@@ -354,9 +355,11 @@ float interpolatePitchInc(const WavetableOsc& osc,
   return osc.phaseIncrements[v] * dsp::math::semitonesToFreqRatio(pitchMod);
 }
 
+// TODO(nico): refactor this!!!
 // Process Oscillators with interpolation and mix (sum) values
 float processAndMixOscillators(VoicePool& pool, uint32_t voiceIndex, uint32_t sampleIndex) {
   using FMSource = wavetable::osc::FMSource;
+  using dsp::wavetable::selectMipLevel;
   using param::ranges::osc::clampScanPos;
   using std::max;
 
@@ -379,10 +382,10 @@ float processAndMixOscillators(VoicePool& pool, uint32_t voiceIndex, uint32_t sa
   float pitchInc3 = interpolatePitchInc(osc3, modMatrix, lfo, ModDest::Osc3Pitch, v, s);
   float pitchInc4 = interpolatePitchInc(osc4, modMatrix, lfo, ModDest::Osc4Pitch, v, s);
 
-  float mip1 = osc::selectMipLevel(pitchInc1 * dsp_wt::TABLE_SIZE_F);
-  float mip2 = osc::selectMipLevel(pitchInc2 * dsp_wt::TABLE_SIZE_F);
-  float mip3 = osc::selectMipLevel(pitchInc3 * dsp_wt::TABLE_SIZE_F);
-  float mip4 = osc::selectMipLevel(pitchInc4 * dsp_wt::TABLE_SIZE_F);
+  float mip1 = selectMipLevel(pitchInc1 * dsp_wt::TABLE_SIZE_F);
+  float mip2 = selectMipLevel(pitchInc2 * dsp_wt::TABLE_SIZE_F);
+  float mip3 = selectMipLevel(pitchInc3 * dsp_wt::TABLE_SIZE_F);
+  float mip4 = selectMipLevel(pitchInc4 * dsp_wt::TABLE_SIZE_F);
 
   float scan1 =
       clampScanPos(osc1.scanPos + dest[ModDest::Osc1ScanPos][v] + lfo[ModDest::Osc1ScanPos]);

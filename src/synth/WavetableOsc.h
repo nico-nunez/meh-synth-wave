@@ -68,15 +68,6 @@ float readWavetable(const WavetableOscillator& osc,
                     float effectiveScanPos,
                     float fmPhaseOffset);
 
-/* Returns a continuous float mip level for the given phase increment.
- * phaseIncrement must be in TABLE_SIZE units (table positions/sample):
- * pass osc.phaseIncrements[v] * TABLE_SIZE_F  (or the interpolated
- * equivalent) Fractional part is the blend weight between mip floor and
- * ceiling. Call per-sample from the interpolated pitch increment — not just at
- * note-on.
- */
-float selectMipLevel(float phaseIncrement);
-
 // Process oscillator (read table and increment phase)
 float processOscillator(WavetableOscillator& osc,
                         uint32_t voiceIndex,

@@ -14,6 +14,7 @@
 - **Explain the "why" with context** - Explain rationale with references to production synthesizers when relevant
 - **Performance matters** - SIMD-ready architecture, cache-friendly data structures, real-time safe code
 - **Functional/procedural style preferred** - SoA + pure functions in hot paths, minimal OOP overhead in audio processing
+- **Library functions assume valid input** - `dsp/` and other internal libs only implement the golden path; null checks, bounds guards, and enabled flags belong at the call site, not inside the primitive
 
 ## Working Style
 - **DO NOT update files unless explicitly requested** - this is a learning project and automatic fixes defeat the purpose
