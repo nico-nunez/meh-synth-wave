@@ -37,4 +37,8 @@ uint32_t xorshift32();
 
 float randNoiseValue();
 
+// Modulation curves (for velocity, mod wheel, etc.)
+float exponentialCurve(float linear); // 0-1 → exponential curve
+float logarithmicCurve(float linear); // 0-1 → logarithmic curve
+
 } // namespace dsp::math

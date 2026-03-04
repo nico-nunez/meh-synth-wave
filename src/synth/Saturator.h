@@ -10,6 +10,6 @@ struct Saturator {
 
 void updateDrive(Saturator& sat, float normalizedDrive);
 
-float processSatruator(const Saturator& sat, float input);
+float processSaturator(const Saturator& sat, float input);
 
 } // namespace synth::saturator

@@ -24,7 +24,7 @@ void updateDrive(Saturator& sat, float normalizedDrive) {
   sat.invDrive = calcInvDrive(sat.drive);
 }
 
-float processSatruator(const Saturator& sat, float sample) {
+float processSaturator(const Saturator& sat, float sample) {
   if (!sat.enabled)
     return sample;
 
