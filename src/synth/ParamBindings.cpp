@@ -222,7 +222,7 @@ void initParamRouter(ParamRouter& router, VoicePool& pool) {
 
 void handleMIDICC(ParamRouter& router, VoicePool& pool, uint8_t cc, uint8_t value) {
   if (cc == 1) {
-    // handleModWheel(value);
+    pool.modWheelValue = value / 127.0f;
     return;
   }
   if (cc == 64) {

@@ -23,6 +23,8 @@ enum ModSrc {
   Velocity, // 0.0–1.0 from MIDI note-on velocity
   Noise,
 
+  ModWheel,
+
   SRC_COUNT // used to size arrays, not a valid source
 };
 
@@ -131,6 +133,8 @@ inline constexpr ModSrcMapping modSrcMappings[ModSrc::SRC_COUNT - 1] = // Not in
         // Per-note
         {"velocity", ModSrc::Velocity},
         {"noise", ModSrc::Noise},
+
+        {"modWheel", ModSrc::ModWheel},
 };
 
 struct ModDestMapping {

@@ -91,7 +91,8 @@ struct VoicePool {
 
   PitchBend pitchBend;
 
-  // TODO(nico) add/handle sustained notes
+  float modWheelValue = 0.0f; // [0.0, 1.0]
+
   bool sustainHeld = false;
 
   float masterGain = 1.0f; // range [0.0 - 2.0]

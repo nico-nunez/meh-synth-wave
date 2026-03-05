@@ -270,6 +270,7 @@ void preProcessBlock(VoicePool& pool, size_t numSamples) {
     modSrcs[ModSrc::FilterEnv] = envelope::processEnvelope(pool.filterEnv, v);
     modSrcs[ModSrc::ModEnv] = envelope::processEnvelope(pool.modEnv, v);
     modSrcs[ModSrc::Velocity] = pool.velocities[v];
+    modSrcs[ModSrc::ModWheel] = pool.modWheelValue;
 
     float modDests[ModDest::DEST_COUNT] = {};
     for (uint8_t r = 0; r < pool.modMatrix.count; r++) {
