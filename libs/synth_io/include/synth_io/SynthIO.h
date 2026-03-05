@@ -26,7 +26,7 @@ struct SessionConfig {
   BufferFormat bufferFormat = BufferFormat::NonInterleaved;
 };
 
-typedef void (*NoteEventHandler)(NoteEvent noteEvent, void* userContext);
+typedef void (*MIDIEventHandler)(MIDIEvent midiEvent, void* userContext);
 typedef void (*AudioBufferHandler)(float** outputBuffer,
                                    size_t numChannels,
                                    size_t numFrames,
@@ -35,8 +35,8 @@ typedef void (*AudioBufferHandler)(float** outputBuffer,
 typedef void (*ParamEventHandler)(ParamEvent paramEvent, void* userContext);
 
 struct SynthCallbacks {
+  MIDIEventHandler processMIDIEvent = nullptr;
   ParamEventHandler processParamEvent = nullptr;
-  NoteEventHandler processNoteEvent = nullptr;
   AudioBufferHandler processAudioBlock = nullptr;
 };
 
@@ -49,9 +49,8 @@ int startSession(hSynthSession sessionPtr);
 int stopSession(hSynthSession sessionPtr);
 int disposeSession(hSynthSession sessionPtr);
 
-// ==== Note Event Handlers ====
-bool noteOn(hSynthSession sessionPtr, uint8_t midiNote, uint8_t velocity);
-bool noteOff(hSynthSession sessionPtr, uint8_t midiNote, uint8_t velocity);
+// ==== MIDI Event Handler ====
+bool pushMIDIEvent(hSynthSession sessionPtr, MIDIEvent event);
 
 // ==== Parameter Event Handlers ====
 bool setParam(hSynthSession sessionPtr, uint8_t id, float value);

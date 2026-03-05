@@ -20,9 +20,9 @@ static void processParamEvent(synth_io::ParamEvent event, void* myContext) {
   engine->processParamEvent(event);
 }
 
-static void processNoteEvent(synth_io::NoteEvent event, void* myContext) {
+static void processMIDIEvent(synth_io::MIDIEvent event, void* myContext) {
   auto engine = static_cast<synth::Engine*>(myContext);
-  engine->processNoteEvent(event);
+  engine->processMIDIEvent(event);
 }
 
 static void
@@ -65,7 +65,7 @@ int main() {
 
   synth_io::SynthCallbacks sessionCallbacks{};
   sessionCallbacks.processAudioBlock = processAudioBlock;
-  sessionCallbacks.processNoteEvent = processNoteEvent;
+  sessionCallbacks.processMIDIEvent = processMIDIEvent;
 
   sessionCallbacks.processParamEvent = processParamEvent;
 

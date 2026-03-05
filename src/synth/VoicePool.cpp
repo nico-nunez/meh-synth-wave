@@ -162,7 +162,7 @@ uint32_t findVoiceRelease(VoicePool& pool, uint8_t midiNote) {
 void initializeVoice(VoicePool& pool,
                      uint32_t voiceIndex,
                      uint8_t midiNote,
-                     float velocity,
+                     uint8_t velocity,
                      uint32_t noteOnTime,
                      float sampleRate) {
 
@@ -207,7 +207,7 @@ void releaseVoice(VoicePool& pool, uint8_t midiNote) {
 // Handle NoteOn Events
 void handleNoteOn(VoicePool& pool,
                   uint8_t midiNote,
-                  float velocity,
+                  uint8_t velocity,
                   uint32_t noteOnTime,
                   float sampleRate) {
   uint32_t voiceIndex = allocateVoiceIndex(pool);
@@ -224,6 +224,20 @@ void handleNoteOn(VoicePool& pool,
   }
 
   addActiveIndex(pool, voiceIndex);
+}
+
+void handleNoteOff(VoicePool& pool, uint8_t midiNote) {
+  // TODO(nico)--need to add sustain handling first
+  // always false for now
+  if (pool.sustainHeld) {
+    for (uint32_t i = 0; i < MAX_VOICES; i++) {
+      if (pool.isActive[i] && pool.midiNotes[i] == midiNote) {
+        // pool.sustainedNotes[i] = true;
+      }
+    }
+  } else {
+    releaseVoice(pool, midiNote);
+  }
 }
 
 // ===========================

@@ -1,6 +1,6 @@
 #include "synth_io/SynthIO.h"
 
-#include "NoteEventQueue.h"
+#include "MIDIEventQueue.h"
 #include "ParamEventQueue.h"
 
 #include "audio_io/AudioIO.h"
@@ -15,12 +15,12 @@ using AudioBuffer = audio_io::AudioBuffer;
 using hAudioSession = audio_io::hAudioSession;
 
 struct SynthSession {
-  NoteEventQueue noteEventQueue{};
+  MIDIEventQueue midiEventQueue{};
   ParamEventQueue paramEventQueue{};
 
   AudioBufferHandler processAudioBlock;
 
-  NoteEventHandler processNoteEvent;
+  MIDIEventHandler processMIDIEvent;
   ParamEventHandler processParamEvent;
 
   hAudioSession audioSession;
@@ -31,6 +31,15 @@ using hSynthSession = SynthSession*;
 static void audioCallback(AudioBuffer buffer, void* context) {
   auto* ctx = static_cast<SynthSession*>(context);
 
+  // Drain MIDI Events
+  if (ctx->processMIDIEvent) {
+    MIDIEvent midiEvent;
+    while (ctx->midiEventQueue.pop(midiEvent)) {
+      ctx->processMIDIEvent(midiEvent, ctx->userContext);
+    }
+  }
+
+  // Drain Param Events
   if (ctx->processParamEvent) {
     ParamEvent paramEvent;
     while (ctx->paramEventQueue.pop(paramEvent)) {
@@ -38,13 +47,7 @@ static void audioCallback(AudioBuffer buffer, void* context) {
     }
   }
 
-  if (ctx->processNoteEvent) {
-    NoteEvent noteEvent;
-    while (ctx->noteEventQueue.pop(noteEvent)) {
-      ctx->processNoteEvent(noteEvent, ctx->userContext);
-    }
-  }
-
+  // Fill Audio Block
   if (ctx->processAudioBlock) {
     ctx->processAudioBlock(buffer.channelPtrs,
                            buffer.numChannels,
@@ -62,7 +65,7 @@ hSynthSession initSession(SessionConfig userConfig,
 
   hSynthSession sessionPtr = new SynthSession();
   sessionPtr->processParamEvent = userCallbacks.processParamEvent;
-  sessionPtr->processNoteEvent = userCallbacks.processNoteEvent;
+  sessionPtr->processMIDIEvent = userCallbacks.processMIDIEvent;
   sessionPtr->processAudioBlock = userCallbacks.processAudioBlock;
   sessionPtr->userContext = userContext;
 
@@ -98,16 +101,10 @@ int disposeSession(hSynthSession sessionPtr) {
   return 0;
 }
 
-// ==== Note Event Handlers ====
-bool noteOn(hSynthSession sessionPtr, uint8_t midiNote, uint8_t velocity) {
-  // TODO(nico): replicate emplace_back() to reduce copy;
-  return sessionPtr->noteEventQueue.push({NoteEventType::NoteOn, midiNote, velocity});
-}
-
-bool noteOff(hSynthSession sessionPtr, uint8_t midiNote, uint8_t velocity) {
-  // TODO(nico): replicate emplace_back() to reduce copy;
-  return sessionPtr->noteEventQueue.push({NoteEventType::NoteOff, midiNote, velocity});
-}
+// ==== MIDI Event Handler ====
+bool pushMIDIEvent(hSynthSession sessionPtr, MIDIEvent event) {
+  return sessionPtr->midiEventQueue.push(event);
+};
 
 // ==== Parameter Event Handlers ====
 bool setParam(hSynthSession sessionPtr, uint8_t id, float value) {

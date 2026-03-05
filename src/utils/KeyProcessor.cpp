@@ -13,55 +13,86 @@
 #include <iostream>
 
 namespace synth::utils {
-using MidiEvent = device_io::MidiEvent;
+namespace d_io = device_io;
 
-using NoteEvent = synth_io::NoteEvent;
-using NoteEventType = synth_io::NoteEventType;
+namespace s_io = synth_io;
 
 // Handle MIDI device events
-static void midiCallback(MidiEvent midiEvent, void* context) {
+static void midiCallback(d_io::MidiEvent devieEvent, void* context) {
   auto sessionPtr = static_cast<hSynthSession>(context);
 
-  // TODO(nico): handle more than just note on/off events
-  switch (midiEvent.type) {
-  case MidiEvent::Type::NoteOn:
-    synth_io::noteOn(sessionPtr, midiEvent.data1, midiEvent.data2);
+  // Convert raw device MIDI data to user friendly event
+  s_io::MIDIEvent event{};
+  event.type = static_cast<s_io::MIDIEvent::Type>(devieEvent.type);
+  event.channel = devieEvent.channel;
+  event.timestamp = devieEvent.timestamp;
+
+  switch (event.type) {
+  case s_io::MIDIEvent::Type::NoteOn:
+    event.data.noteOn = {devieEvent.data1, devieEvent.data2};
     break;
-  case MidiEvent::Type::NoteOff:
-    synth_io::noteOff(sessionPtr, midiEvent.data1, midiEvent.data2);
+  case s_io::MIDIEvent::Type::NoteOff:
+    event.data.noteOff = {devieEvent.data1, devieEvent.data2};
+    break;
+  case s_io::MIDIEvent::Type::ControlChange:
+    event.data.cc = {devieEvent.data1, devieEvent.data2};
+    break;
+  case s_io::MIDIEvent::Type::PitchBend:
+    event.data.pitchBend = {devieEvent.pitchBendValue};
+    break;
+  case s_io::MIDIEvent::Type::ProgramChange:
+    event.data.programChange = {devieEvent.data1};
+    break;
+  case s_io::MIDIEvent::Type::Aftertouch:
+    event.data.aftertouch = {devieEvent.data1, devieEvent.data2};
+    break;
+  case s_io::MIDIEvent::Type::ChannelPressure:
+    event.data.channelPressure = {devieEvent.data1};
     break;
 
   default:
     break;
   }
+
+  s_io::pushMIDIEvent(sessionPtr, event);
 }
 
 // Handle keyboard events
 static void keyEventCallback(device_io::KeyEvent event, void* userContext) {
   auto sessionPtr = static_cast<hSynthSession>(userContext);
 
-  // Currently 'z' & 'x' control octive up/down
-  // Need to ignore keyup (note off) for now
-  if ((event.character == 120 || event.character == 122) &&
-      event.type == device_io::KeyEventType::KeyUp) {
+  if (event.type == device_io::KeyEventType::KeyDown) {
+    // ESC (quit)
+    if (event.keyCode == 53) {
+      printf("ESC pressed, stopping...\n");
+      device_io::terminateKeyCaptureLoop();
+      return;
+    }
 
-    return;
+    uint8_t note = asciiToMidi(event.character);
+    if (note == 0)
+      return;
 
-    // Note "ON" event
-  } else if (event.type == device_io::KeyEventType::KeyDown) {
+    s_io::MIDIEvent midiEvent{};
+    midiEvent.type = s_io::MIDIEvent::Type::NoteOn;
+    midiEvent.data.noteOn = {note, 127};
 
-    synth_io::noteOn(sessionPtr, asciiToMidi(event.character), 127);
+    s_io::pushMIDIEvent(sessionPtr, midiEvent);
 
     // Note "OFF" event
   } else if (event.type == device_io::KeyEventType::KeyUp) {
+    uint8_t note = asciiToMidi(event.character);
 
-    synth_io::noteOff(sessionPtr, asciiToMidi(event.character), 127);
-  }
+    // Currently 'z' & 'x' control octive up/down
+    // Need to ignore keyup (note off) for now
+    if (event.character == 120 || event.character == 122 || note == 0)
+      return;
 
-  // "ESC" to quit
-  if (event.type == device_io::KeyEventType::KeyDown && event.keyCode == 53) {
-    printf("ESC pressed, stopping...\n");
-    device_io::terminateKeyCaptureLoop();
+    s_io::MIDIEvent midiEvent{};
+    midiEvent.type = s_io::MIDIEvent::Type::NoteOff;
+    midiEvent.data.noteOff = {note, 0};
+
+    s_io::pushMIDIEvent(sessionPtr, midiEvent);
   }
 }
 
@@ -181,53 +212,53 @@ uint8_t asciiToMidi(char key) {
   // 118 // ('v')
 
   switch (key) {
-  case 97: //  ('a') "C"  64
+  case 97: //  ('a') "C"
+    midiKey = 60;
+    break;
+  case 119: // ('w') "C#"
+    midiKey = 61;
+    break;
+  case 115: // ('s') "D"
+    midiKey = 62;
+    break;
+  case 101: // ('e') "D#"
+    midiKey = 63;
+    break;
+  case 100: // ('d') "E"
     midiKey = 64;
     break;
-  case 119: // ('w') "C#" 65
+  case 102: // ('f') "F"
     midiKey = 65;
     break;
-  case 115: // ('s') "D"  66
+  case 116: // ('t') "F#"
     midiKey = 66;
     break;
-  case 101: // ('e') "D#" 67
+  case 103: // ('g') "G"
     midiKey = 67;
     break;
-  case 100: // ('d') "E"  68
+  case 121: // ('y') "G#"
     midiKey = 68;
     break;
-  case 102: // ('f') "F"  69
+  case 104: // ('h') "A"
     midiKey = 69;
     break;
-  case 116: // ('t') "F#" 70
+  case 117: // ('u') "A#"
     midiKey = 70;
     break;
-  case 103: // ('g') "G"  71
+  case 106: // ('j') "B"
     midiKey = 71;
     break;
-  case 121: // ('y') "G#" 72
+  case 107: // ('k') "C"
     midiKey = 72;
     break;
-  case 104: // ('h') "A"  73
+  case 111: // ('o') "C#"
     midiKey = 73;
     break;
-  case 117: // ('u') "A#" 74
+  case 108: // ('l') "D"
     midiKey = 74;
     break;
-  case 106: // ('j') "B"  75
+  case 112: // ('p') "D#"
     midiKey = 75;
-    break;
-  case 107: // ('k') "C"  76
-    midiKey = 76;
-    break;
-  case 111: // ('o') "C#" 77
-    midiKey = 77;
-    break;
-  case 108: // ('l') "D"  78
-    midiKey = 78;
-    break;
-  case 112: // ('p') "D#" 79
-    midiKey = 79;
     break;
 
   default:

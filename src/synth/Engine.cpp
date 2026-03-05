@@ -10,7 +10,8 @@
 #include <cstdio>
 
 namespace synth {
-using ParamEvent = synth_io::ParamEvent;
+using synth_io::MIDIEvent;
+using synth_io::ParamEvent;
 
 Engine createEngine(const EngineConfig& config) {
   Engine engine{};
@@ -19,6 +20,8 @@ Engine createEngine(const EngineConfig& config) {
 
   param::bindings::initParamBindings(engine);
 
+  engine.initMIDIBindings();
+
   return engine;
 }
 
@@ -26,14 +29,79 @@ void Engine::processParamEvent(const ParamEvent& event) {
   param::bindings::setParamValueByID(*this, static_cast<ParamID>(event.id), event.value);
 }
 
-void Engine::processNoteEvent(const synth_io::NoteEvent& event) {
-  if (!event.midiNote)
+// =============================
+// MIDI Event Handlers
+// =============================
+void Engine::initMIDIBindings() {
+  using param::bindings::ParamID;
+
+  for (auto& cc : ccTable)
+    cc = ParamID::UNKOWN;
+
+  ccTable[7] = ParamID::MASTER_GAIN;
+  ccTable[74] = ParamID::SVF_CUTOFF;
+  ccTable[71] = ParamID::SVF_RESONANCE;
+}
+
+void Engine::handleCC(uint8_t cc, uint8_t value) {
+  using namespace param::bindings;
+
+  if (cc == 1) {
+    // handleModWheel(value);
+    return;
+  }
+  if (cc == 64) {
+    // handleSustain(value);
+    return;
+  }
+
+  ParamID paramID = ccTable[cc];
+  if (paramID == ParamID::UNKOWN)
     return;
 
-  if (event.type == synth_io::NoteEventType::NoteOff) {
-    voices::releaseVoice(voicePool, event.midiNote);
-  } else {
-    voices::handleNoteOn(voicePool, event.midiNote, event.velocity, noteCount++, sampleRate);
+  auto& binding = paramBindings[paramID];
+  float denorm = binding.min + (value / 127.0f) * (binding.max - binding.min);
+
+  setParamValueByID(*this, paramID, denorm);
+}
+
+void Engine::processMIDIEvent(const synth_io::MIDIEvent& event) {
+  using Type = MIDIEvent::Type;
+
+  switch (event.type) {
+  case Type::NoteOn:
+    if (event.data.noteOn.velocity > 0)
+      voices::handleNoteOn(voicePool,
+                           event.data.noteOn.note,
+                           event.data.noteOn.velocity,
+                           ++noteCount,
+                           sampleRate);
+    else
+      voices::releaseVoice(voicePool, event.data.noteOn.note);
+    break;
+
+  case Type::NoteOff:
+    voices::handleNoteOff(voicePool, event.data.noteOff.note);
+    break;
+
+  case Type::ControlChange:
+    handleCC(event.data.cc.number, event.data.cc.value);
+    break;
+
+  case Type::PitchBend:
+    // TODO
+    break;
+
+  // TODO(nico)...at some point
+  case Type::Aftertouch:
+    break;
+  case Type::ChannelPressure:
+    break;
+  case Type::ProgramChange:
+    break;
+
+  default:
+    break;
   }
 }
 

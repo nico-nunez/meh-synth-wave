@@ -3,6 +3,7 @@
 #include "synth/Filters.h"
 
 #include <cstddef>
+#include <cstdint>
 
 namespace synth {
 struct Engine;
@@ -98,6 +99,7 @@ enum ParamID {
 
   MASTER_GAIN,
 
+  UNKOWN,
   PARAM_COUNT,
 };
 

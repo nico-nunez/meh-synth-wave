@@ -84,6 +84,9 @@ struct VoicePool {
   float masterGain = 1.0f; // range [0.0 - 2.0]
                            // range [-inf - +6DB]
 
+  // TODO(nico) add/handle sustained notes
+  bool sustainHeld = false;
+
   // ==== Voice metadata ====
   uint8_t midiNotes[MAX_VOICES];    // Which MIDI note (0-127)
   float velocities[MAX_VOICES];     // Note-on velocity (0.0-1.0)
@@ -101,12 +104,29 @@ struct VoicePool {
   uint32_t activeIndices[MAX_VOICES]; // Dense array of active indices
 };
 
+// ===========================
+// Voice Pool Management
+// ===========================
 // Initialize VoicePool (once upon engin creation)
 void initVoicePool(VoicePool& pool, const VoicePoolConfig& config);
 
 // updating existing Engine member
 void updateVoicePoolConfig(VoicePool& pool, const VoicePoolConfig& config);
 
+// ===========================
+// MIDI Event Handlers
+// ===========================
+void handleNoteOn(VoicePool& pool,
+                  uint8_t midiNote,
+                  uint8_t velocity,
+                  uint32_t noteOnTime,
+                  float sampleRate);
+
+void handleNoteOff(VoicePool& pool, uint8_t midiNote);
+
+// ====================================
+// Voice Alloaction & Initialization
+// ====================================
 // Find free or oldest voice index for voice Initialization
 uint32_t allocateVoiceIndex(VoicePool& pool);
 
@@ -114,7 +134,7 @@ uint32_t allocateVoiceIndex(VoicePool& pool);
 void initializeVoice(VoicePool& pool,
                      uint32_t index,
                      uint8_t midiNote,
-                     float velocity,
+                     uint8_t velocity,
                      uint32_t noteOnTime,
                      float sampleRate);
 
@@ -128,11 +148,5 @@ void addActiveIndex(VoicePool& pool, uint32_t voiceIndex);
 void removeInactiveIndex(VoicePool& pool, uint32_t voiceIndex);
 
 void processVoices(VoicePool& pool, float* output, size_t numSamples);
-
-void handleNoteOn(VoicePool& pool,
-                  uint8_t midiNote,
-                  float velocity,
-                  uint32_t noteOnTime,
-                  float sampleRate);
 
 } // namespace synth::voices

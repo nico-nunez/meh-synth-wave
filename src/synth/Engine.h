@@ -11,7 +11,7 @@
 #include <cstdint>
 
 namespace synth {
-using synth_io::NoteEvent;
+using synth_io::MIDIEvent;
 using synth_io::ParamEvent;
 
 using voices::VoicePool;
@@ -32,6 +32,8 @@ struct Engine {
   float sampleRate = synth_io::DEFAULT_SAMPLE_RATE;
 
   VoicePool voicePool;
+
+  ParamID ccTable[128];
   ParamBinding paramBindings[ParamID::PARAM_COUNT];
 
   // TODO(nico): this probably needs to live on heap
@@ -40,9 +42,13 @@ struct Engine {
 
   uint32_t noteCount = 0;
 
-  void processNoteEvent(const NoteEvent& event);
+  void processMIDIEvent(const MIDIEvent& event);
   void processParamEvent(const ParamEvent& event);
   void processAudioBlock(float** outputBuffer, size_t numChannels, size_t numFrames);
+
+  // TODO(nico): this feels like it needs to be refactored along with paramBindings
+  void initMIDIBindings();
+  void handleCC(uint8_t cc, uint8_t value);
 };
 
 Engine createEngine(const EngineConfig& config);

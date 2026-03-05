@@ -6,7 +6,7 @@ namespace device_io {
 struct MidiSession;
 }
 namespace synth_io {
-struct NoteEventQueue;
+struct MidiEventQueue;
 struct SynthSession;
 } // namespace synth_io
 
