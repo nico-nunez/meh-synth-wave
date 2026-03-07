@@ -152,15 +152,16 @@ void handleNoteOff(VoicePool& pool, uint8_t midiNote);
 // Voice Alloaction & Initialization
 // ====================================
 // Find free or oldest voice index for voice Initialization
-uint32_t allocateVoiceIndex(VoicePool& pool);
+uint32_t allocateVoiceIndex(VoicePool& pool, bool& outStolen);
 
 // Initial voice state for noteOn event
-void initializeVoice(VoicePool& pool,
-                     uint32_t index,
-                     uint8_t midiNote,
-                     uint8_t velocity,
-                     uint32_t noteOnTime,
-                     float sampleRate);
+void initVoice(VoicePool& pool,
+               uint32_t index,
+               uint8_t midiNote,
+               uint8_t velocity,
+               uint32_t noteOnTime,
+               bool retrigger,
+               float sampleRate);
 
 // Mono Legato (adjust pitch without reseting phases if legato)
 void redirectVoicePitch(VoicePool& pool, uint32_t voiceIndex, uint8_t midiNote, float sampleRate);

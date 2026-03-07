@@ -44,7 +44,11 @@ inline constexpr float TIME_MAX = 10000.0f; // ms
 inline constexpr float SUSTAIN_MIN = 0.0f;
 inline constexpr float SUSTAIN_MAX = 1.0f;
 
+inline constexpr float CURVE_MIN = -10.0f; // extreme concave
+inline constexpr float CURVE_MAX = 10.0f;  // extreme convex
+
 float clampTime(float timeAmount);
+float clampCurve(float curveAmount);
 float clampSustain(float sustainLevel);
 } // namespace env
 

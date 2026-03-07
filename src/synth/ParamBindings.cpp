@@ -125,15 +125,18 @@ void bindLFO(ParamBinding* bindings, ParamID baseId, lfo::LFO& lfo) {
 void bindEnvelope(ParamBinding* bindings, ParamID baseId, envelope::Envelope& env) {
   bindings[baseId + 0] =
       makeParamBinding(&env.attackMs, ranges::env::TIME_MIN, ranges::env::TIME_MAX);
-
   bindings[baseId + 1] =
       makeParamBinding(&env.decayMs, ranges::env::TIME_MIN, ranges::env::TIME_MAX);
-
   bindings[baseId + 2] =
       makeParamBinding(&env.sustainLevel, ranges::env::SUSTAIN_MIN, ranges::env::SUSTAIN_MAX);
-
   bindings[baseId + 3] =
       makeParamBinding(&env.releaseMs, ranges::env::TIME_MIN, ranges::env::TIME_MAX);
+  bindings[baseId + 4] =
+      makeParamBinding(&env.attackCurveParam, ranges::env::CURVE_MIN, ranges::env::CURVE_MAX);
+  bindings[baseId + 5] =
+      makeParamBinding(&env.decayCurveParam, ranges::env::CURVE_MIN, ranges::env::CURVE_MAX);
+  bindings[baseId + 6] =
+      makeParamBinding(&env.releaseCurveParam, ranges::env::CURVE_MIN, ranges::env::CURVE_MAX);
 }
 
 // Mono Bindings
@@ -145,21 +148,43 @@ void bindMono(ParamBinding* bindings, mono::MonoState& mono) {
 // Handle updates to params with derived values
 void onParamUpdate(VoicePool& pool, ParamID id) {
   switch (id) {
-  // Update Amp Envelope on param changes
   case AMP_ENV_ATTACK:
   case AMP_ENV_DECAY:
   case AMP_ENV_RELEASE:
     envelope::updateIncrements(pool.ampEnv, pool.sampleRate);
     break;
 
-  // Update Filter Envelope on param changes
+  case AMP_ENV_ATTACK_CURVE:
+  case AMP_ENV_DECAY_CURVE:
+  case AMP_ENV_RELEASE_CURVE:
+    envelope::updateCurveTables(pool.ampEnv);
+    break;
+
   case FILTER_ENV_ATTACK:
   case FILTER_ENV_DECAY:
   case FILTER_ENV_RELEASE:
     envelope::updateIncrements(pool.filterEnv, pool.sampleRate);
     break;
 
-  // Update Filter Coefficient(s) on param changes
+  case FILTER_ENV_ATTACK_CURVE:
+  case FILTER_ENV_DECAY_CURVE:
+  case FILTER_ENV_RELEASE_CURVE:
+    envelope::updateCurveTables(pool.filterEnv);
+    break;
+
+  case MOD_ENV_ATTACK:
+  case MOD_ENV_DECAY:
+  case MOD_ENV_RELEASE:
+    envelope::updateIncrements(pool.modEnv, pool.sampleRate);
+    break;
+
+  case MOD_ENV_ATTACK_CURVE:
+  case MOD_ENV_DECAY_CURVE:
+  case MOD_ENV_RELEASE_CURVE:
+    envelope::updateCurveTables(pool.modEnv);
+    break;
+
+    // Update Filter Coefficient(s) on param changes
   case SVF_CUTOFF:
   case SVF_RESONANCE:
     filters::updateSVFCoefficients(pool.svf, pool.invSampleRate);

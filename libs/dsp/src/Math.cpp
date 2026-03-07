@@ -76,16 +76,13 @@ float randNoiseValue() {
   return static_cast<float>(static_cast<int32_t>(xorshift32())) * 4.6566129e-10f; // float → [-1, 1]
 }
 
-// TODO(nico): spend more time understanding these...
-// Modulation curves (for velocity, mod wheel, etc.)
-float exponentialCurve(float linear) {
-  // Maps 0-1 linearly to 0-1 exponentially
-  return (std::exp(linear * 4.0f) - 1.0f) / (std::exp(4.0f) - 1.0f);
+// Modulation/Envelope curve shapes
+float expCurve(float t, float k) {
+  return (std::exp(t * k) - 1.0f) / (std::exp(k) - 1.0f); // [0.0, 1.0]
 }
 
-float logarithmicCurve(float linear) {
-  // Maps 0-1 linearly to 0-1 logarithmically
-  return std::log(1.0f + linear * (std::exp(1.0f) - 1.0f));
+float expCurve(float t, float k, float invDenom) {
+  return (std::exp(t * k) - 1.0f) * invDenom; // [0.0, 1.0]
 }
 
 } // namespace dsp::math

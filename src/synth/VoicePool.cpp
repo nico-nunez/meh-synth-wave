@@ -1,5 +1,6 @@
 #include "VoicePool.h"
 
+#include "synth/Envelope.h"
 #include "synth/LFO.h"
 #include "synth/MonoMode.h"
 #include "synth/Noise.h"
@@ -24,6 +25,7 @@ using mod_matrix::ModRoute;
 using mod_matrix::ModSrc;
 
 namespace osc = wavetable::osc;
+namespace env = envelope;
 
 // =========================
 // VoicePool Configuration
@@ -67,6 +69,12 @@ void initVoicePool(VoicePool& pool, const VoicePoolConfig& config) {
 
   updateVoicePoolConfig(pool, config);
 
+  // Initialize curve tables (empty to start)
+  env::updateCurveTables(pool.ampEnv);
+  env::updateCurveTables(pool.filterEnv);
+  env::updateCurveTables(pool.modEnv);
+
+  // Initialize sustaion
   for (uint8_t i = 0; i < MAX_VOICES; i++)
     pool.sustain.notes[i] = false;
 
@@ -93,9 +101,10 @@ void initVoicePool(VoicePool& pool, const VoicePoolConfig& config) {
 //  Voice Allocation
 // =========================
 // Find free or oldest voice index for voice Initialization
-uint32_t allocateVoiceIndex(VoicePool& pool) {
+uint32_t allocateVoiceIndex(VoicePool& pool, bool& outStolen) {
   uint32_t oldestIndex = MAX_VOICES; // out of range
   uint32_t oldestNoteOnTime = UINT32_MAX;
+  outStolen = false;
 
   for (uint32_t i = 0; i < MAX_VOICES; i++) {
     if (!pool.isActive[i]) {
@@ -108,8 +117,7 @@ uint32_t allocateVoiceIndex(VoicePool& pool) {
     }
   }
 
-  // Need to cleanup otherwise it'll play twice
-  // since it'll be added again after initializing voice
+  outStolen = true;
   removeInactiveIndex(pool, oldestIndex);
 
   return oldestIndex;
@@ -155,8 +163,8 @@ uint32_t findVoiceRelease(VoicePool& pool, uint8_t midiNote) {
   for (uint32_t i = 0; i < pool.activeCount; i++) {
     uint32_t voiceIndex = pool.activeIndices[i];
     if (pool.midiNotes[voiceIndex] == midiNote &&
-        pool.ampEnv.states[voiceIndex] != envelope::EnvelopeStatus::Release &&
-        pool.ampEnv.states[voiceIndex] != envelope::EnvelopeStatus::Idle) {
+        pool.ampEnv.states[voiceIndex] != env::EnvelopeStatus::Release &&
+        pool.ampEnv.states[voiceIndex] != env::EnvelopeStatus::Idle) {
 
       return voiceIndex;
     }
@@ -176,12 +184,13 @@ void redirectVoicePitch(VoicePool& pool, uint32_t voiceIndex, uint8_t midiNote, 
   osc::updateOscPitch(pool.osc4, voiceIndex, midiNote, sampleRate);
 }
 
-void initializeVoice(VoicePool& pool,
-                     uint32_t voiceIndex,
-                     uint8_t midiNote,
-                     uint8_t velocity,
-                     uint32_t noteOnTime,
-                     float sampleRate) {
+void initVoice(VoicePool& pool,
+               uint32_t voiceIndex,
+               uint8_t midiNote,
+               uint8_t velocity,
+               uint32_t noteOnTime,
+               bool retrigger,
+               float sampleRate) {
 
   pool.isActive[voiceIndex] = 1;
   pool.sustain.notes[voiceIndex] = false;
@@ -203,12 +212,18 @@ void initializeVoice(VoicePool& pool,
   osc::initOsc(pool.osc3, voiceIndex, midiNote, sampleRate);
   osc::initOsc(pool.osc4, voiceIndex, midiNote, sampleRate);
 
-  envelope::initEnvelope(pool.ampEnv, voiceIndex, sampleRate);
-  envelope::initEnvelope(pool.filterEnv, voiceIndex, sampleRate);
-  envelope::initEnvelope(pool.modEnv, voiceIndex, sampleRate);
+  if (retrigger) {
+    env::retriggerEnvelope(pool.ampEnv, voiceIndex, sampleRate);
+    env::retriggerEnvelope(pool.filterEnv, voiceIndex, sampleRate);
+    env::retriggerEnvelope(pool.modEnv, voiceIndex, sampleRate);
+  } else {
+    env::initEnvelope(pool.ampEnv, voiceIndex, sampleRate);
+    env::initEnvelope(pool.filterEnv, voiceIndex, sampleRate);
+    env::initEnvelope(pool.modEnv, voiceIndex, sampleRate);
 
-  filters::initSVFilter(pool.svf, voiceIndex);
-  filters::initLadderFilter(pool.ladder, voiceIndex);
+    filters::initSVFilter(pool.svf, voiceIndex);
+    filters::initLadderFilter(pool.ladder, voiceIndex);
+  }
 }
 
 void releaseMonoVoice(VoicePool& pool) {
@@ -252,7 +267,7 @@ void handleNoteOn(VoicePool& pool,
                   float sampleRate) {
   float noteFreq = utils::midiToFrequency(midiNote);
 
-  // Mono Mode Paths
+  // ==== Mono Path(s) ====
   if (pool.mono.enabled) {
     pool.mono.heldNotes[midiNote] = true;
     mono::pushNoteToStack(pool.mono, midiNote);
@@ -274,15 +289,18 @@ void handleNoteOn(VoicePool& pool,
       if (!pool.isActive[current])
         addActiveIndex(pool, current);
 
-      initializeVoice(pool, current, midiNote, velocity, noteOnTime, sampleRate);
+      initVoice(pool, current, midiNote, velocity, noteOnTime, true, sampleRate);
       pool.lastNoteFreq = noteFreq;
       return;
     }
     // Path 1: initial/no existing notes (proceed as normal)
   }
 
-  uint32_t voiceIndex = allocateVoiceIndex(pool);
-  initializeVoice(pool, voiceIndex, midiNote, velocity, noteOnTime, sampleRate);
+  // ==== Normal/Poly Path ====
+  bool isStolen = false; // retrigger if stolen
+  uint32_t voiceIndex = allocateVoiceIndex(pool, isStolen);
+
+  initVoice(pool, voiceIndex, midiNote, velocity, noteOnTime, isStolen, sampleRate);
 
   if (pool.mono.enabled)
     pool.mono.voiceIndex = voiceIndex;

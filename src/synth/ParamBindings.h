@@ -51,18 +51,27 @@ enum ParamID {
   AMP_ENV_DECAY,
   AMP_ENV_SUSTAIN_LEVEL,
   AMP_ENV_RELEASE,
+  AMP_ENV_ATTACK_CURVE,
+  AMP_ENV_DECAY_CURVE,
+  AMP_ENV_RELEASE_CURVE,
 
   // Filter Envelope
   FILTER_ENV_ATTACK,
   FILTER_ENV_DECAY,
   FILTER_ENV_SUSTAIN_LEVEL,
   FILTER_ENV_RELEASE,
+  FILTER_ENV_ATTACK_CURVE,
+  FILTER_ENV_DECAY_CURVE,
+  FILTER_ENV_RELEASE_CURVE,
 
   // Modulation Envelope
   MOD_ENV_ATTACK,
   MOD_ENV_DECAY,
   MOD_ENV_SUSTAIN_LEVEL,
   MOD_ENV_RELEASE,
+  MOD_ENV_ATTACK_CURVE,
+  MOD_ENV_DECAY_CURVE,
+  MOD_ENV_RELEASE_CURVE,
 
   // SVF Filter
   SVF_MODE,
@@ -167,16 +176,25 @@ constexpr ParamMapping PARAM_NAMES[] = {
     {AMP_ENV_DECAY, "ampEnv.decay", ParamValueType::FLOAT},
     {AMP_ENV_SUSTAIN_LEVEL, "ampEnv.sustain", ParamValueType::FLOAT},
     {AMP_ENV_RELEASE, "ampEnv.release", ParamValueType::FLOAT},
+    {AMP_ENV_ATTACK_CURVE, "ampEnv.attackCurve", ParamValueType::FLOAT},
+    {AMP_ENV_DECAY_CURVE, "ampEnv.decayCurve", ParamValueType::FLOAT},
+    {AMP_ENV_RELEASE_CURVE, "ampEnv.releaseCurve", ParamValueType::FLOAT},
 
     {FILTER_ENV_ATTACK, "filterEnv.attack", ParamValueType::FLOAT},
     {FILTER_ENV_DECAY, "filterEnv.decay", ParamValueType::FLOAT},
     {FILTER_ENV_SUSTAIN_LEVEL, "filterEnv.sustain", ParamValueType::FLOAT},
     {FILTER_ENV_RELEASE, "filterEnv.release", ParamValueType::FLOAT},
+    {FILTER_ENV_ATTACK_CURVE, "filterEnv.attackCurve", ParamValueType::FLOAT},
+    {FILTER_ENV_DECAY_CURVE, "filterEnv.decayCurve", ParamValueType::FLOAT},
+    {FILTER_ENV_RELEASE_CURVE, "filterEnv.releaseCurve", ParamValueType::FLOAT},
 
     {MOD_ENV_ATTACK, "modEnv.attack", ParamValueType::FLOAT},
     {MOD_ENV_DECAY, "modEnv.decay", ParamValueType::FLOAT},
     {MOD_ENV_SUSTAIN_LEVEL, "modEnv.sustain", ParamValueType::FLOAT},
     {MOD_ENV_RELEASE, "modEnv.release", ParamValueType::FLOAT},
+    {MOD_ENV_ATTACK_CURVE, "modEnv.attackCurve", ParamValueType::FLOAT},
+    {MOD_ENV_DECAY_CURVE, "modEnv.decayCurve", ParamValueType::FLOAT},
+    {MOD_ENV_RELEASE_CURVE, "modEnv.releaseCurve", ParamValueType::FLOAT},
 
     {SVF_MODE, "svf.mode", ParamValueType::FILTER_MODE},
     {SVF_CUTOFF, "svf.cutoff", ParamValueType::FLOAT},

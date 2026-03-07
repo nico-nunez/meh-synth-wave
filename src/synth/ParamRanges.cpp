@@ -32,6 +32,9 @@ namespace env {
 float clampTime(float timeAmount) {
   return std::clamp(timeAmount, TIME_MIN, TIME_MAX);
 }
+float clampCurve(float curveAmount) {
+  return std::clamp(curveAmount, CURVE_MIN, CURVE_MAX);
+}
 float clampSustain(float sustainLevel) {
   return std::clamp(sustainLevel, SUSTAIN_MIN, SUSTAIN_MAX);
 }
