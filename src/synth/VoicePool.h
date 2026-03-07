@@ -7,6 +7,7 @@
 #include "Types.h"
 #include "WavetableOsc.h"
 #include "synth/LFO.h"
+#include "synth/MonoMode.h"
 #include "synth/ParamRanges.h"
 #include "synth/Saturator.h"
 #include "synth/SignalChain.h"
@@ -37,6 +38,8 @@ using signal_chain::SignalProcessor;
 
 using mod_matrix::ModMatrix;
 
+using mono::MonoState;
+
 struct PitchBend {
   float value = 0.0f; // [-1.0, 1.0]
   float range = param::ranges::pitch::BEND_RANGE_DEFAULT;
@@ -56,6 +59,8 @@ struct VoicePoolConfig {
   NoiseConfig noise{};
 
   float pitchBendRange = 2.0f;
+
+  bool mono = false; // default poly
 
   float masterGain = 1.0f;
   float sampleRate = 48000.0f;
@@ -102,6 +107,9 @@ struct VoicePool {
 
   float masterGain = 1.0f; // range [0.0 - 2.0]
                            // range [-inf - +6DB]
+
+  float lastNoteFreq = 0; // mono & portamento
+  MonoState mono;
 
   // ==== Voice metadata ====
   uint8_t midiNotes[MAX_VOICES];    // Which MIDI note (0-127)
@@ -154,8 +162,14 @@ void initializeVoice(VoicePool& pool,
                      uint32_t noteOnTime,
                      float sampleRate);
 
+// Mono Legato (adjust pitch without reseting phases if legato)
+void redirectVoicePitch(VoicePool& pool, uint32_t voiceIndex, uint8_t midiNote, float sampleRate);
+
 // Trigger envelope release for voice playing midiNote
 void releaseVoice(VoicePool& pool, uint8_t midiNote);
+
+// Same as above but for mono voice
+void releaseMonoVoice(VoicePool& pool);
 
 // Add newly active voice (noteOn)
 void addActiveIndex(VoicePool& pool, uint32_t voiceIndex);

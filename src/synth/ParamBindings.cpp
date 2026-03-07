@@ -3,6 +3,7 @@
 #include "Envelope.h"
 #include "synth/Filters.h"
 #include "synth/LFO.h"
+#include "synth/MonoMode.h"
 #include "synth/Noise.h"
 #include "synth/ParamRanges.h"
 #include "synth/Saturator.h"
@@ -135,6 +136,12 @@ void bindEnvelope(ParamBinding* bindings, ParamID baseId, envelope::Envelope& en
       makeParamBinding(&env.releaseMs, ranges::env::TIME_MIN, ranges::env::TIME_MAX);
 }
 
+// Mono Bindings
+void bindMono(ParamBinding* bindings, mono::MonoState& mono) {
+  bindings[MONO_ENABLED] = makeParamBinding(&mono.enabled);
+  bindings[MONO_LEGATO] = makeParamBinding(&mono.legato);
+}
+
 // Handle updates to params with derived values
 void onParamUpdate(VoicePool& pool, ParamID id) {
   switch (id) {
@@ -165,6 +172,22 @@ void onParamUpdate(VoicePool& pool, ParamID id) {
 
   case SATURATOR_DRIVE:
     pool.saturator.invDrive = saturator::calcInvDrive(pool.saturator.drive);
+    break;
+
+  case MONO_ENABLED:
+    if (pool.mono.enabled) {
+      // Kill any active poly voices
+      for (uint32_t i = 0; i < pool.activeCount; i++) {
+        uint32_t v = pool.activeIndices[i];
+        envelope::triggerRelease(pool.ampEnv, v);
+        envelope::triggerRelease(pool.filterEnv, v);
+        envelope::triggerRelease(pool.modEnv, v);
+      }
+      pool.mono.voiceIndex = MAX_VOICES;
+      pool.mono.stackDepth = 0;
+    } else {
+      voices::releaseMonoVoice(pool);
+    }
     break;
 
     // No special handling needed for other params like
@@ -217,6 +240,8 @@ void initParamRouter(ParamRouter& router, VoicePool& pool) {
   router.paramBindings[MASTER_GAIN] = makeParamBinding(&pool.masterGain,
                                                        ranges::global::MASTER_GAIN_MIN,
                                                        ranges::global::MASTER_GAIN_MAX);
+  bindMono(router.paramBindings, pool.mono);
+
   initMIDIBindings(router);
 }
 
@@ -230,7 +255,26 @@ void handleMIDICC(ParamRouter& router, VoicePool& pool, uint8_t cc, uint8_t valu
     pool.sustain.held = (value >= 64);
 
     if (wasHeld && !pool.sustain.held) {
-      // Pedal released — trigger release on all deferred voices
+      // Mono: handle the one voice directly
+      if (pool.mono.enabled) {
+        uint32_t mv = pool.mono.voiceIndex;
+
+        if (mv < MAX_VOICES && pool.sustain.notes[mv]) {
+          pool.sustain.notes[mv] = false;
+
+          if (pool.mono.stackDepth > 0) {
+            uint8_t prevNote = pool.mono.noteStack[pool.mono.stackDepth - 1];
+            voices::redirectVoicePitch(pool, mv, prevNote, pool.sampleRate);
+          } else {
+            envelope::triggerRelease(pool.ampEnv, mv);
+            envelope::triggerRelease(pool.filterEnv, mv);
+            envelope::triggerRelease(pool.modEnv, mv);
+          }
+        }
+        return;
+      }
+
+      // Poly: release all deferred voices
       for (uint32_t i = 0; i < MAX_VOICES; ++i) {
         if (pool.sustain.notes[i]) {
           pool.sustain.notes[i] = false;

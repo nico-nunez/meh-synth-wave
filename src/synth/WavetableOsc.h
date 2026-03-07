@@ -46,7 +46,10 @@ struct WavetableOsc {
   bool enabled = true;
 };
 
-void initOscillator(WavetableOsc& osc, uint32_t voiceIndex, uint8_t midiNote, float sampleRate);
+void initOsc(WavetableOsc& osc, uint32_t voiceIndex, uint8_t midiNote, float sampleRate);
+
+// Mono (no retrigger/legato)
+void updateOscPitch(WavetableOsc& osc, uint32_t voiceIndex, uint8_t midiNote, float sampleRate);
 
 void updateConfig(WavetableOsc& osc, const WavetableOscConfig& config);
 
@@ -66,12 +69,12 @@ float readWavetable(const WavetableOsc& osc,
                     float fmPhaseOffset);
 
 // Process oscillator (read table and increment phase)
-float processOscillator(WavetableOsc& osc,
-                        uint32_t voiceIndex,
-                        float mipF,
-                        float effectiveScanPos,
-                        float fmPhaseOffset,
-                        float pitchIncrement);
+float processOsc(WavetableOsc& osc,
+                 uint32_t voiceIndex,
+                 float mipF,
+                 float effectiveScanPos,
+                 float fmPhaseOffset,
+                 float pitchIncrement);
 
 // =====================
 // FM (phase modulation)

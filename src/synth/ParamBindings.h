@@ -98,6 +98,9 @@ enum ParamID {
 
   MASTER_GAIN,
 
+  MONO_ENABLED,
+  MONO_LEGATO,
+
   UNKOWN,
   PARAM_COUNT,
 };
@@ -204,6 +207,9 @@ constexpr ParamMapping PARAM_NAMES[] = {
     {PITCH_BEND_RANGE, "pitchBend.range", ParamValueType::FLOAT},
 
     {MASTER_GAIN, "master.gain", ParamValueType::FLOAT},
+
+    {MONO_ENABLED, "mono.enabled", ParamValueType::BOOL},
+    {MONO_LEGATO, "mono.legato", ParamValueType::BOOL},
 
 };
 

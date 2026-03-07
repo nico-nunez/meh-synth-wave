@@ -11,11 +11,19 @@ namespace dsp_wt = dsp::wavetable;
 // ================================
 // Initialization
 // ================================
-void initOscillator(WavetableOsc& osc, uint32_t voiceIndex, uint8_t midiNote, float sampleRate) {
+void initOsc(WavetableOsc& osc, uint32_t voiceIndex, uint8_t midiNote, float sampleRate) {
   float offsetExp = static_cast<float>(osc.octaveOffset) + (osc.detuneAmount / 1200.0f);
   float freq = utils::midiToFrequency(midiNote) * std::exp2f(offsetExp);
 
   osc.phases[voiceIndex] = 0.0f;
+  osc.phaseIncrements[voiceIndex] = freq / sampleRate;
+}
+
+// Mono (no retrigger/legato)
+void updateOscPitch(WavetableOsc& osc, uint32_t voiceIndex, uint8_t midiNote, float sampleRate) {
+  float offsetExp = static_cast<float>(osc.octaveOffset) + (osc.detuneAmount / 1200.0f);
+  float freq = utils::midiToFrequency(midiNote) * std::exp2f(offsetExp);
+
   osc.phaseIncrements[voiceIndex] = freq / sampleRate;
 }
 
@@ -105,12 +113,12 @@ float readWavetable(const WavetableOsc& osc,
                                fmPhaseOffset);
 }
 
-float processOscillator(WavetableOsc& osc,
-                        uint32_t voiceIndex,
-                        float mipF,
-                        float effectiveScanPos,
-                        float fmPhaseOffset,
-                        float pitchIncrement) {
+float processOsc(WavetableOsc& osc,
+                 uint32_t voiceIndex,
+                 float mipF,
+                 float effectiveScanPos,
+                 float fmPhaseOffset,
+                 float pitchIncrement) {
   if (!osc.enabled || osc.bank == nullptr)
     return 0.0f;
   return dsp_wt::processWavetableOsc(osc.bank,

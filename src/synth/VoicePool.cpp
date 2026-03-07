@@ -1,15 +1,18 @@
 #include "VoicePool.h"
 
-#include "dsp/Wavetable.h"
 #include "synth/LFO.h"
+#include "synth/MonoMode.h"
 #include "synth/Noise.h"
 #include "synth/ParamRanges.h"
 #include "synth/SignalChain.h"
 #include "synth/WavetableBanks.h"
 #include "synth/WavetableOsc.h"
 
+#include "utils/Utils.h"
+
 #include "dsp/Filters.h"
 #include "dsp/Math.h"
+#include "dsp/Wavetable.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -28,6 +31,8 @@ namespace osc = wavetable::osc;
 void updateVoicePoolConfig(VoicePool& pool, const VoicePoolConfig& config) {
   pool.sampleRate = config.sampleRate;
   pool.invSampleRate = 1.0f / config.sampleRate;
+
+  pool.mono.enabled = config.mono;
 
   pool.masterGain = config.masterGain;
 
@@ -162,6 +167,15 @@ uint32_t findVoiceRelease(VoicePool& pool, uint8_t midiNote) {
 } // namespace
 // ==== </Initialization Helpers> ====
 
+// Mono Legato (adjust pitch without reseting phases if legato)
+void redirectVoicePitch(VoicePool& pool, uint32_t voiceIndex, uint8_t midiNote, float sampleRate) {
+  pool.midiNotes[voiceIndex] = midiNote;
+  osc::updateOscPitch(pool.osc1, voiceIndex, midiNote, sampleRate);
+  osc::updateOscPitch(pool.osc2, voiceIndex, midiNote, sampleRate);
+  osc::updateOscPitch(pool.osc3, voiceIndex, midiNote, sampleRate);
+  osc::updateOscPitch(pool.osc4, voiceIndex, midiNote, sampleRate);
+}
+
 void initializeVoice(VoicePool& pool,
                      uint32_t voiceIndex,
                      uint8_t midiNote,
@@ -184,10 +198,10 @@ void initializeVoice(VoicePool& pool,
   }
   osc::resetOscModState(pool.oscModState, voiceIndex);
 
-  osc::initOscillator(pool.osc1, voiceIndex, midiNote, sampleRate);
-  osc::initOscillator(pool.osc2, voiceIndex, midiNote, sampleRate);
-  osc::initOscillator(pool.osc3, voiceIndex, midiNote, sampleRate);
-  osc::initOscillator(pool.osc4, voiceIndex, midiNote, sampleRate);
+  osc::initOsc(pool.osc1, voiceIndex, midiNote, sampleRate);
+  osc::initOsc(pool.osc2, voiceIndex, midiNote, sampleRate);
+  osc::initOsc(pool.osc3, voiceIndex, midiNote, sampleRate);
+  osc::initOsc(pool.osc4, voiceIndex, midiNote, sampleRate);
 
   envelope::initEnvelope(pool.ampEnv, voiceIndex, sampleRate);
   envelope::initEnvelope(pool.filterEnv, voiceIndex, sampleRate);
@@ -197,26 +211,84 @@ void initializeVoice(VoicePool& pool,
   filters::initLadderFilter(pool.ladder, voiceIndex);
 }
 
+void releaseMonoVoice(VoicePool& pool) {
+  uint32_t v = pool.mono.voiceIndex;
+  if (v < MAX_VOICES && pool.isActive[v]) {
+    envelope::triggerRelease(pool.ampEnv, v);
+    envelope::triggerRelease(pool.filterEnv, v);
+    envelope::triggerRelease(pool.modEnv, v);
+  }
+  pool.mono.voiceIndex = MAX_VOICES;
+  pool.mono.stackDepth = 0;
+}
+
 void releaseVoice(VoicePool& pool, uint8_t midiNote) {
-  uint32_t voiceIndex = findVoiceRelease(pool, midiNote);
+  uint32_t voiceIndex = pool.mono.enabled && pool.mono.voiceIndex < MAX_VOICES
+                            ? pool.mono.voiceIndex
+                            : findVoiceRelease(pool, midiNote);
 
   if (!isValidActiveIndex(voiceIndex))
     return;
+
+  // Mono: revert to previous held note instead of releasing
+  if (pool.mono.enabled && pool.mono.stackDepth > 0) {
+    uint8_t prevNote = pool.mono.noteStack[pool.mono.stackDepth - 1];
+    redirectVoicePitch(pool, voiceIndex, prevNote, pool.sampleRate);
+    return; // don't release envs below
+  }
 
   envelope::triggerRelease(pool.ampEnv, voiceIndex);
   envelope::triggerRelease(pool.filterEnv, voiceIndex);
   envelope::triggerRelease(pool.modEnv, voiceIndex);
 }
 
-// Handle NoteOn Events
+// ========================
+// Note Event Handers
+// ========================
 void handleNoteOn(VoicePool& pool,
                   uint8_t midiNote,
                   uint8_t velocity,
                   uint32_t noteOnTime,
                   float sampleRate) {
-  uint32_t voiceIndex = allocateVoiceIndex(pool);
+  float noteFreq = utils::midiToFrequency(midiNote);
 
+  // Mono Mode Paths
+  if (pool.mono.enabled) {
+    pool.mono.heldNotes[midiNote] = true;
+    mono::pushNoteToStack(pool.mono, midiNote);
+
+    // Handle existing note(s) being held/active
+    if (pool.mono.voiceIndex < MAX_VOICES) {
+      uint32_t current = pool.mono.voiceIndex;
+
+      bool isPlaying = pool.ampEnv.states[current] != envelope::EnvelopeStatus::Release &&
+                       pool.ampEnv.states[current] != envelope::EnvelopeStatus::Idle;
+
+      // Path 2: Legato (adjust pitch/redirect)
+      if (pool.mono.legato && isPlaying) {
+        redirectVoicePitch(pool, current, midiNote, sampleRate);
+        pool.lastNoteFreq = noteFreq;
+        return;
+      }
+      // Path 3: No legato or note is releasing/idle (full retrigger)
+      if (!pool.isActive[current])
+        addActiveIndex(pool, current);
+
+      initializeVoice(pool, current, midiNote, velocity, noteOnTime, sampleRate);
+      pool.lastNoteFreq = noteFreq;
+      return;
+    }
+    // Path 1: initial/no existing notes (proceed as normal)
+  }
+
+  uint32_t voiceIndex = allocateVoiceIndex(pool);
   initializeVoice(pool, voiceIndex, midiNote, velocity, noteOnTime, sampleRate);
+
+  if (pool.mono.enabled)
+    pool.mono.voiceIndex = voiceIndex;
+
+  // TODO(nico): portamento
+  pool.lastNoteFreq = noteFreq;
 
   if (pool.activeCount == 0) {
     if (pool.lfo1.retrigger)
@@ -231,15 +303,22 @@ void handleNoteOn(VoicePool& pool,
 }
 
 void handleNoteOff(VoicePool& pool, uint8_t midiNote) {
+  if (pool.mono.enabled) {
+    pool.mono.heldNotes[midiNote] = false;
+    mono::removeNoteFromStack(pool.mono, midiNote);
+  }
+
+  // Sustain & don't release voice
   if (pool.sustain.held) {
     for (uint32_t i = 0; i < pool.activeCount; i++) {
       uint32_t v = pool.activeIndices[i]; // voiceIndex
       if (pool.midiNotes[v] == midiNote)
         pool.sustain.notes[v] = true;
     }
-  } else {
-    releaseVoice(pool, midiNote);
+    return;
   }
+
+  releaseVoice(pool, midiNote);
 }
 
 // ===========================
@@ -445,10 +524,10 @@ float processAndMixOscillators(VoicePool& pool, uint32_t voiceIndex, uint32_t sa
   float fm3 = osc::getFmInputValue(oscModState, v, osc3.fmSource, FMSource::Osc3) * fmDepth3;
   float fm4 = osc::getFmInputValue(oscModState, v, osc4.fmSource, FMSource::Osc4) * fmDepth4;
 
-  float out1 = osc::processOscillator(osc1, v, mip1, scan1, fm1, pitchInc1);
-  float out2 = osc::processOscillator(osc2, v, mip2, scan2, fm2, pitchInc2);
-  float out3 = osc::processOscillator(osc3, v, mip3, scan3, fm3, pitchInc3);
-  float out4 = osc::processOscillator(osc4, v, mip4, scan4, fm4, pitchInc4);
+  float out1 = osc::processOsc(osc1, v, mip1, scan1, fm1, pitchInc1);
+  float out2 = osc::processOsc(osc2, v, mip2, scan2, fm2, pitchInc2);
+  float out3 = osc::processOsc(osc3, v, mip3, scan3, fm3, pitchInc3);
+  float out4 = osc::processOsc(osc4, v, mip4, scan4, fm4, pitchInc4);
 
   oscModState.osc1[v] = out1;
   oscModState.osc2[v] = out2;
