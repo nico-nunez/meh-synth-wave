@@ -1,14 +1,134 @@
-#include <AudioToolbox/AudioToolbox.h>
-
 #include "CoreAudioAdapter.h"
+
 #include "audio_io/AudioIOTypes.h"
 #include "shared/AudioSession.h"
 
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 
 namespace CoreAudioAdapter {
+// ============================
+// Audio Device Negotiation
+// ============================
+using audio_io::DeviceInfo;
+
+namespace {
+OSStatus getDefaultDeviceID(AudioDeviceID& deviceID) {
+  UInt32 size = sizeof(deviceID);
+
+  AudioObjectPropertyAddress defaultDevAddr{};
+  defaultDevAddr.mSelector = kAudioHardwarePropertyDefaultOutputDevice;
+  defaultDevAddr.mScope = kAudioObjectPropertyScopeGlobal;
+  defaultDevAddr.mElement = kAudioObjectPropertyElementMain;
+
+  OSStatus status = AudioObjectGetPropertyData(kAudioObjectSystemObject,
+                                               &defaultDevAddr,
+                                               0,
+                                               nullptr,
+                                               &size,
+                                               &deviceID);
+  return status;
+}
+
+OSStatus getAudioDeviceSampleRate(AudioDeviceID deviceID, DeviceInfo& info) {
+  Float64 nominalRate;
+  UInt32 size = sizeof(nominalRate);
+
+  AudioObjectPropertyAddress rateAddr{};
+  rateAddr.mSelector = kAudioDevicePropertyNominalSampleRate;
+  rateAddr.mScope = kAudioObjectPropertyScopeOutput;
+  rateAddr.mElement = kAudioObjectPropertyElementMain;
+
+  OSStatus status =
+      AudioObjectGetPropertyData(deviceID, &rateAddr, 0, nullptr, &size, &nominalRate);
+
+  if (status == noErr) {
+    info.sampleRate = static_cast<uint32_t>(nominalRate);
+  } else {
+    printf("Error getting sample rate: %d\n", status);
+  }
+
+  return status;
+}
+
+OSStatus getAudioDeviceBufferFrameSize(AudioDeviceID deviceID, DeviceInfo& info) {
+  UInt32 bufferFrameSize;
+  UInt32 size = sizeof(bufferFrameSize);
+
+  AudioObjectPropertyAddress bufAddr{};
+  bufAddr.mSelector = kAudioDevicePropertyBufferFrameSize;
+  bufAddr.mScope = kAudioObjectPropertyScopeOutput;
+  bufAddr.mElement = kAudioObjectPropertyElementMain;
+
+  OSStatus status =
+      AudioObjectGetPropertyData(deviceID, &bufAddr, 0, nullptr, &size, &bufferFrameSize);
+
+  if (status == noErr) {
+    info.bufferFrameSize = bufferFrameSize;
+  } else {
+    printf("Error getting buffer size: %d\n", status);
+  }
+
+  return status;
+}
+
+OSStatus getAudioDeviceChannelCount(AudioDeviceID deviceID, DeviceInfo& info) {
+  UInt32 dataSize = 0;
+
+  AudioObjectPropertyAddress chanAddr{};
+  chanAddr.mSelector = kAudioDevicePropertyStreamConfiguration;
+  chanAddr.mScope = kAudioObjectPropertyScopeOutput;
+  chanAddr.mElement = kAudioObjectPropertyElementMain;
+
+  OSStatus status = AudioObjectGetPropertyDataSize(deviceID, &chanAddr, 0, nullptr, &dataSize);
+  if (status == noErr && dataSize > 0) {
+    auto* bufferList = static_cast<AudioBufferList*>(alloca(dataSize));
+
+    status = AudioObjectGetPropertyData(deviceID, &chanAddr, 0, nullptr, &dataSize, bufferList);
+
+    if (status == noErr) {
+      uint32_t total = 0;
+
+      for (UInt32 i = 0; i < bufferList->mNumberBuffers; i++)
+        total += bufferList->mBuffers[i].mNumberChannels;
+
+      if (total > 0)
+        info.numChannels = static_cast<uint16_t>(total);
+    } else {
+      printf("Error channel bufferList: %d\n", status);
+    }
+  } else {
+    printf("Error channel dataSize: %d\n", status);
+  }
+  return status;
+}
+
+} // namespace
+
+audio_io::DeviceInfo queryDefaultOutputDevice() {
+  AudioDeviceID deviceID;
+
+  audio_io::DeviceInfo info{};
+  info.sampleRate = audio_io::DEFAULT_SAMPLE_RATE;
+  info.bufferFrameSize = audio_io::DEFAULT_FRAMES;
+  info.numChannels = audio_io::DEFAULT_CHANNELS;
+
+  OSStatus status = getDefaultDeviceID(deviceID);
+  if (status != noErr)
+    return info;
+
+  getAudioDeviceSampleRate(deviceID, info);
+  getAudioDeviceBufferFrameSize(deviceID, info);
+  getAudioDeviceChannelCount(deviceID, info);
+
+  return info;
+}
+
+// ============================
+// Audio Session Initialization
+// ============================
 
 // Private to this file - no one else sees this type
 struct CoreAudioContext {

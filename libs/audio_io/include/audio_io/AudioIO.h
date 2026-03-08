@@ -6,11 +6,13 @@
 
 namespace audio_io {
 
+DeviceInfo queryDefaultDevice();
+
 using AudioCallback = void (*)(AudioBuffer buffer, void* context);
 
-audio_io::hAudioSession setupAudioSession(const audio_io::Config& userConfig,
-                                          audio_io::AudioCallback userCallback,
-                                          void* userContext);
+hAudioSession setupAudioSession(const audio_io::Config& userConfig,
+                                audio_io::AudioCallback userCallback,
+                                void* userContext);
 
 PLATFORM_START(startAudioSession);
 PLATFORM_STOP(stopAudioSession);

@@ -11,6 +11,18 @@
 
 namespace audio_io {
 
+// =============================
+// Audio Device Negotiation
+// =============================
+
+DeviceInfo queryDefaultDevice() {
+  return CoreAudioAdapter::queryDefaultOutputDevice();
+}
+
+// =============================
+// Audio Session Initialization
+// =============================
+
 hAudioSession setupAudioSession(const Config& userConfig,
                                 AudioCallback userCallback,
                                 void* userContext) {

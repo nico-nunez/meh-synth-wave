@@ -14,6 +14,17 @@ namespace synth_io {
 using AudioBuffer = audio_io::AudioBuffer;
 using hAudioSession = audio_io::hAudioSession;
 
+// ==========================
+// Audio Device Negotiation
+// ==========================
+DeviceInfo queryDefaultDevice() {
+  auto info = audio_io::queryDefaultDevice();
+  return {info.sampleRate, info.bufferFrameSize, info.numChannels};
+}
+
+// =============================
+// Synth Session Initialization
+// =============================
 struct SynthSession {
   MIDIEventQueue midiEventQueue{};
   ParamEventQueue paramEventQueue{};

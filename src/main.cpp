@@ -52,16 +52,25 @@ int main() {
   using synth::Engine;
   using synth::EngineConfig;
 
-  constexpr float SAMPLE_RATE = 48000.0f;
+  // Query hardware for actual device parameters
+  auto deviceInfo = synth_io::queryDefaultDevice();
+  float sampleRate = static_cast<float>(deviceInfo.sampleRate);
+
+  printf("Audio device: %u Hz, %u frames, %u channels\n",
+         deviceInfo.sampleRate,
+         deviceInfo.bufferFrameSize,
+         deviceInfo.numChannels);
 
   EngineConfig engineConfig{};
-  engineConfig.sampleRate = SAMPLE_RATE;
+  engineConfig.sampleRate = sampleRate;
+  engineConfig.numFrames = deviceInfo.bufferFrameSize;
 
   Engine engine = synth::createEngine(engineConfig);
 
-  // 2. Setup audio_io
   synth_io::SessionConfig sessionConfig{};
-  sessionConfig.sampleRate = static_cast<uint32_t>(SAMPLE_RATE);
+  sessionConfig.sampleRate = deviceInfo.sampleRate;
+  sessionConfig.numFrames = deviceInfo.bufferFrameSize;
+  sessionConfig.numChannels = deviceInfo.numChannels;
 
   synth_io::SynthCallbacks sessionCallbacks{};
   sessionCallbacks.processAudioBlock = processAudioBlock;
