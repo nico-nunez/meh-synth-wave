@@ -6,11 +6,13 @@
 #include "Noise.h"
 #include "Types.h"
 #include "WavetableOsc.h"
+#include "dsp/Buffers.h"
 #include "synth/LFO.h"
 #include "synth/MonoMode.h"
 #include "synth/ParamRanges.h"
 #include "synth/Saturator.h"
 #include "synth/SignalChain.h"
+#include "synth_io/SynthIO.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -39,6 +41,8 @@ using signal_chain::SignalProcessor;
 using mod_matrix::ModMatrix;
 
 using mono::MonoState;
+
+using dsp::buffers::StereoBuffer;
 
 struct PitchBend {
   float value = 0.0f; // [-1.0, 1.0]
@@ -74,7 +78,7 @@ struct VoicePoolConfig {
   bool mono = false; // default poly
 
   float masterGain = 1.0f;
-  float sampleRate = 48000.0f;
+  float sampleRate = synth_io::DEFAULT_SAMPLE_RATE;
 };
 
 // VoicePool - top-level container (universal synth)
@@ -86,6 +90,10 @@ struct VoicePool {
   WavetableOsc osc4;
 
   Noise noise;
+
+  // Stereo
+  float panL[MAX_VOICES];
+  float panR[MAX_VOICES];
 
   LFO lfo1;
   LFO lfo2;
@@ -190,6 +198,6 @@ void addActiveIndex(VoicePool& pool, uint32_t voiceIndex);
 // Remove an inactive voice (noteOff)
 void removeInactiveIndex(VoicePool& pool, uint32_t voiceIndex);
 
-void processVoices(VoicePool& pool, float* output, size_t numSamples);
+void processVoices(VoicePool& pool, StereoBuffer poolBuffer, size_t numSamples);
 
 } // namespace synth::voices

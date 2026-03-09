@@ -2,6 +2,7 @@
 #include "ParamBindings.h"
 #include "VoicePool.h"
 
+#include "dsp/Buffers.h"
 #include "synth_io/Events.h"
 
 #include <algorithm>
@@ -14,10 +15,14 @@ using synth_io::MIDIEvent;
 using synth_io::ParamEvent;
 
 Engine createEngine(const EngineConfig& config) {
+  using dsp::buffers::initStereoBuffer;
   using param::bindings::initParamRouter;
   using voices::initVoicePool;
 
   Engine engine{};
+  engine.numFrames = config.numFrames;
+
+  initStereoBuffer(engine.poolBuffer, config.numFrames);
   initVoicePool(engine.voicePool, config);
   initParamRouter(engine.paramRouter, engine.voicePool);
 
@@ -39,7 +44,7 @@ void Engine::processMIDIEvent(const synth_io::MIDIEvent& event) {
                            event.data.noteOn.note,
                            event.data.noteOn.velocity,
                            ++noteCount,
-                           sampleRate);
+                           voicePool.sampleRate);
     else
       voices::releaseVoice(voicePool, event.data.noteOn.note);
     break;
@@ -84,13 +89,24 @@ void Engine::processAudioBlock(float** outputBuffer, size_t numChannels, size_t 
   uint32_t offset = 0;
   while (offset < numFrames) {
     uint32_t blockSize = std::min(ENGINE_BLOCK_SIZE, static_cast<uint32_t>(numFrames) - offset);
-    voices::processVoices(voicePool, poolBuffer + offset, blockSize);
+    auto bufferSlice = dsp::buffers::createStereoBufferSlice(poolBuffer, offset);
+
+    voices::processVoices(voicePool, bufferSlice, blockSize);
     offset += blockSize;
   }
 
   for (size_t frame = 0; frame < numFrames; frame++) {
-    for (size_t ch = 0; ch < numChannels; ch++) {
-      outputBuffer[ch][frame] = poolBuffer[frame];
+    if (numChannels == 0)
+      continue;
+
+    // Mono
+    if (numChannels == 1)
+      outputBuffer[0][frame] = (poolBuffer.left[frame] + poolBuffer.right[frame]) * 0.5f;
+
+    // TODO(nico): handle for more than just stereo channels
+    if (numChannels >= 2) {
+      outputBuffer[0][frame] = poolBuffer.left[frame];
+      outputBuffer[1][frame] = poolBuffer.right[frame];
     }
   }
 }

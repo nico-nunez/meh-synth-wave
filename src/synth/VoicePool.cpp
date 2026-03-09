@@ -1,5 +1,6 @@
 #include "VoicePool.h"
 
+#include "dsp/Buffers.h"
 #include "synth/Envelope.h"
 #include "synth/LFO.h"
 #include "synth/MonoMode.h"
@@ -24,6 +25,8 @@ using mod_matrix::ModSrc;
 
 namespace osc = wavetable::osc;
 namespace env = envelope;
+
+using dsp::buffers::StereoBuffer;
 
 // =========================
 // VoicePool Configuration
@@ -71,6 +74,12 @@ void initVoicePool(VoicePool& pool, const VoicePoolConfig& config) {
   env::updateCurveTables(pool.ampEnv);
   env::updateCurveTables(pool.filterEnv);
   env::updateCurveTables(pool.modEnv);
+
+  // Initialization Stereo (balanced)
+  for (uint8_t i = 0; i < MAX_VOICES; i++) {
+    pool.panL[i] = 1.0f;
+    pool.panR[i] = 1.0f;
+  }
 
   // Initialize sustaion
   for (uint8_t i = 0; i < MAX_VOICES; i++)
@@ -212,6 +221,10 @@ void initVoice(VoicePool& pool,
 
   pool.sampleRate = sampleRate;
   pool.invSampleRate = 1.0f / sampleRate;
+
+  // Reset Stereo (balanced)
+  pool.panL[voiceIndex] = 1.0f;
+  pool.panR[voiceIndex] = 1.0f;
 
   for (int d = 0; d < ModDest::DEST_COUNT; d++) {
     pool.modMatrix.prevDestValues[d][voiceIndex] = 0.0f;
@@ -680,8 +693,8 @@ void postProcessBlock(VoicePool& pool) {
 
 //==== </Processing Helpers> ====
 } // namespace
-
-void processVoices(VoicePool& pool, float* output, size_t numSamples) {
+//
+void processVoices(VoicePool& pool, StereoBuffer output, size_t numSamples) {
   auto& lfoContribs = pool.lfoModState.contribs;
 
   // ==== Set and process Mod Matrix values (block-rate) ====
@@ -689,7 +702,8 @@ void processVoices(VoicePool& pool, float* output, size_t numSamples) {
 
   // ==== Calculate each sample value (audio-rate) ====
   for (uint32_t sIndex = 0; sIndex < numSamples; sIndex++) {
-    float sample = 0.0f;
+    float sampleL = 0.0f;
+    float sampleR = 0.0f;
 
     processLFOs(pool);
 
@@ -742,12 +756,15 @@ void processVoices(VoicePool& pool, float* output, size_t numSamples) {
         // No index adjustment needed - iterating backwards
       }
 
-      sample += signal * ampEnv * pool.velocities[vIndex] * VOICE_GAIN;
+      float voiceSample = signal * ampEnv * pool.velocities[vIndex] * VOICE_GAIN;
+      sampleL += voiceSample * pool.panL[vIndex];
+      sampleR += voiceSample * pool.panR[vIndex];
     }
 
     // TODO(nico): Basic soft clip for now.
     // Mainly for protection and not as an effect
-    output[sIndex] = dsp::math::fastTanh(sample * pool.masterGain);
+    output.left[sIndex] = dsp::math::fastTanh(sampleL * pool.masterGain);
+    output.right[sIndex] = dsp::math::fastTanh(sampleR * pool.masterGain);
   }
 
   // Advance pitch interpolation state for next block
