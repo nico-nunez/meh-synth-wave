@@ -1,10 +1,11 @@
 -xc++
 -std=c++17
 -Isrc
--Ilibs/dsp/include
 -Ilibs/audio_io/src
 -Ilibs/audio_io/include
 -Ilibs/device_io/include
+-Ilibs/dsp/include
+-Ilibs/json/include
 -Ilibs/synth_io/include
 -Wall
 -Weffc++

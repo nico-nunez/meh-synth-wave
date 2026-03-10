@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "metadata": {
+    "name": "Atmospheric Pad",
+    "author": "",
+    "category": "Pad",
+    "description": "Lush evolving pad — detuned oscillators, unison stereo spread, slow LFO scan modulation, long envelopes"
+  },
+  "oscillators": {
+    "osc1": {
+      "bank": "sinetosaw", "scanPos": 0.3, "mixLevel": 1.0,
+      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "octaveOffset": 0, "detuneAmount": 6.0, "enabled": true
+    },
+    "osc2": {
+      "bank": "sinetosaw", "scanPos": 0.3, "mixLevel": 0.8,
+      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "octaveOffset": 0, "detuneAmount": -6.0, "enabled": true
+    },
+    "osc3": {
+      "bank": "triangle", "scanPos": 0.0, "mixLevel": 0.5,
+      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "octaveOffset": 1, "detuneAmount": 3.0, "enabled": true
+    },
+    "osc4": {
+      "bank": "sine", "scanPos": 0.0, "mixLevel": 0.4,
+      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "octaveOffset": -1, "detuneAmount": 0.0, "enabled": true
+    }
+  },
+  "noise": { "mixLevel": 0.0, "type": "white", "enabled": false },
+  "envelopes": {
+    "ampEnv": {
+      "attackMs": 800.0, "decayMs": 1000.0, "sustainLevel": 0.85,
+      "releaseMs": 3000.0, "attackCurve": -4.0, "decayCurve": -3.0, "releaseCurve": -4.0
+    },
+    "filterEnv": {
+      "attackMs": 1200.0, "decayMs": 2000.0, "sustainLevel": 0.4,
+      "releaseMs": 2000.0, "attackCurve": -3.0, "decayCurve": -4.0, "releaseCurve": -4.0
+    },
+    "modEnv": {
+      "attackMs": 10.0, "decayMs": 100.0, "sustainLevel": 0.7,
+      "releaseMs": 200.0, "attackCurve": -5.0, "decayCurve": -5.0, "releaseCurve": -5.0
+    }
+  },
+  "filters": {
+    "svf": { "mode": "lp", "cutoff": 3000.0, "resonance": 0.2, "enabled": true },
+    "ladder": { "cutoff": 1000.0, "resonance": 0.3, "drive": 1.0, "enabled": false }
+  },
+  "saturator": { "drive": 1.0, "mix": 1.0, "enabled": false },
+  "lfos": {
+    "lfo1": { "bank": "sine", "rate": 0.15, "amplitude": 0.7, "retrigger": false },
+    "lfo2": { "bank": "triangle", "rate": 0.08, "amplitude": 0.5, "retrigger": false },
+    "lfo3": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false }
+  },
+  "modMatrix": [
+    { "source": "filterEnv", "destination": "svf.cutoff", "amount": 1.5 },
+    { "source": "lfo1", "destination": "osc1.scanPos", "amount": 0.4 },
+    { "source": "lfo1", "destination": "osc2.scanPos", "amount": 0.4 },
+    { "source": "lfo2", "destination": "svf.cutoff", "amount": 0.3 }
+  ],
+  "signalChain": ["svf", "ladder", "saturator"],
+  "mono": { "enabled": false, "legato": true },
+  "portamento": { "time": 50.0, "legato": true, "enabled": false },
+  "unison": { "voices": 4, "detune": 15.0, "spread": 0.7, "enabled": true },
+  "global": { "pitchBendRange": 2.0 }
+}

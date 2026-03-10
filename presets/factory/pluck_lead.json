@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "metadata": {
+    "name": "Pluck Lead",
+    "author": "",
+    "category": "Lead",
+    "description": "Sharp pluck lead — fast attack, short decay, velocity-sensitive filter, mono with glide"
+  },
+  "oscillators": {
+    "osc1": {
+      "bank": "saw", "scanPos": 0.0, "mixLevel": 1.0,
+      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "octaveOffset": 0, "detuneAmount": 5.0, "enabled": true
+    },
+    "osc2": {
+      "bank": "square", "scanPos": 0.0, "mixLevel": 0.6,
+      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "octaveOffset": 0, "detuneAmount": -5.0, "enabled": true
+    },
+    "osc3": {
+      "bank": "sine", "scanPos": 0.0, "mixLevel": 0.0,
+      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "octaveOffset": 0, "detuneAmount": 0.0, "enabled": false
+    },
+    "osc4": {
+      "bank": "sine", "scanPos": 0.0, "mixLevel": 0.0,
+      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "octaveOffset": 0, "detuneAmount": 0.0, "enabled": false
+    }
+  },
+  "noise": { "mixLevel": 0.0, "type": "white", "enabled": false },
+  "envelopes": {
+    "ampEnv": {
+      "attackMs": 1.0, "decayMs": 300.0, "sustainLevel": 0.3,
+      "releaseMs": 150.0, "attackCurve": -1.0, "decayCurve": -6.0, "releaseCurve": -5.0
+    },
+    "filterEnv": {
+      "attackMs": 1.0, "decayMs": 250.0, "sustainLevel": 0.15,
+      "releaseMs": 100.0, "attackCurve": -1.0, "decayCurve": -7.0, "releaseCurve": -5.0
+    },
+    "modEnv": {
+      "attackMs": 10.0, "decayMs": 100.0, "sustainLevel": 0.7,
+      "releaseMs": 200.0, "attackCurve": -5.0, "decayCurve": -5.0, "releaseCurve": -5.0
+    }
+  },
+  "filters": {
+    "svf": { "mode": "lp", "cutoff": 2000.0, "resonance": 0.35, "enabled": true },
+    "ladder": { "cutoff": 1000.0, "resonance": 0.3, "drive": 1.0, "enabled": false }
+  },
+  "saturator": { "drive": 1.0, "mix": 1.0, "enabled": false },
+  "lfos": {
+    "lfo1": { "bank": "sine", "rate": 5.0, "amplitude": 0.3, "retrigger": true },
+    "lfo2": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false },
+    "lfo3": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false }
+  },
+  "modMatrix": [
+    { "source": "filterEnv", "destination": "svf.cutoff", "amount": 2.0 },
+    { "source": "velocity", "destination": "svf.cutoff", "amount": 1.5 },
+    { "source": "lfo1", "destination": "osc1.pitch", "amount": 0.15 }
+  ],
+  "signalChain": ["svf", "ladder", "saturator"],
+  "mono": { "enabled": true, "legato": true },
+  "portamento": { "time": 60.0, "legato": true, "enabled": true },
+  "unison": { "voices": 4, "detune": 20.0, "spread": 0.5, "enabled": false },
+  "global": { "pitchBendRange": 2.0 }
+}
