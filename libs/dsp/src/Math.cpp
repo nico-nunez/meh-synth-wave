@@ -94,4 +94,34 @@ float calcPortamento(float t, float sampleRate) {
   return expf(-1.0f / (t * sampleRate));
 }
 
+// =====================
+// Unison
+// =====================
+
+// Compute N symmetric detune offsets in semitones from a total spread in cents.
+// count=1 writes 0. count>1 distributes linearly: [-spread/2, ..., +spread/2] cents → semitones.
+void computeDetuneOffsets(float* out, int count, float detuneCents) {
+  if (count <= 1) {
+    out[0] = 0.0f;
+    return;
+  }
+  for (int i = 0; i < count; i++) {
+    float t = (2.0f * static_cast<float>(i) / static_cast<float>(count - 1)) - 1.0f; // [-1.0,1.0]
+    out[i] = t * (detuneCents * 0.5f) / 100.0f; // cents → semitones
+  }
+}
+
+// Compute N symmetric pan positions in [-width, +width].
+// count=1 writes 0 (center). width=1 spans full stereo field.
+void computePanPositions(float* out, int count, float width) {
+  if (count <= 1) {
+    out[0] = 0.0f;
+    return;
+  }
+  for (int i = 0; i < count; i++) {
+    float t = (2.0f * static_cast<float>(i) / static_cast<float>(count - 1)) - 1.0f; // [-1.0,1.0]
+    out[i] = t * width;
+  }
+}
+
 } // namespace dsp::math

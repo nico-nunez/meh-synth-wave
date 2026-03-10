@@ -12,6 +12,7 @@
 #include "synth/ParamRanges.h"
 #include "synth/Saturator.h"
 #include "synth/SignalChain.h"
+#include "synth/Unison.h"
 #include "synth_io/SynthIO.h"
 
 #include <cstddef>
@@ -41,6 +42,8 @@ using signal_chain::SignalProcessor;
 using mod_matrix::ModMatrix;
 
 using mono::MonoState;
+
+using unison::UnisonState;
 
 using dsp::buffers::StereoBuffer;
 
@@ -107,9 +110,9 @@ struct VoicePool {
 
   ModMatrix modMatrix;
 
-  Envelope ampEnv;    // Amplitude envelope
-  Envelope filterEnv; // Filter modulation
-  Envelope modEnv;    // General-purpose modulation
+  Envelope ampEnv;
+  Envelope filterEnv;
+  Envelope modEnv;
 
   SVFilter svf;
   LadderFilter ladder;
@@ -120,9 +123,11 @@ struct VoicePool {
 
   PitchBend pitchBend;
 
-  Portamento porta; // portamento
+  Portamento porta;
 
   Sustain sustain;
+
+  UnisonState unison;
 
   float modWheelValue = 0.0f; // [0.0, 1.0]
 

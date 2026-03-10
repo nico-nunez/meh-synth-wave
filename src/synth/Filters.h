@@ -16,7 +16,8 @@ using dsp::filters::LadderState;
 
 // ==== State Variable Filter (SVF) ====
 struct SVFilter {
-  SVFState voiceStates[MAX_VOICES]; // (hot path)
+  SVFState statesL[MAX_VOICES];
+  SVFState statesR[MAX_VOICES];
 
   // Cached coefficients (cold, recomputed on param change)
   SVFCoeffs coeffs{};
@@ -31,7 +32,8 @@ struct SVFilter {
 
 // ==== Ladder Filter (Moog Style) ====
 struct LadderFilter {
-  LadderState voiceStates[MAX_VOICES]; // (hot path)
+  LadderState statesL[MAX_VOICES]; // (hot path)
+  LadderState statesR[MAX_VOICES]; // (hot path)
 
   // Cached coefficient (cold, recomputed on param change)
   // frequency coefficient: 2 * sin(π * cutoff / sampleRate)
@@ -53,15 +55,16 @@ void initSVFilter(SVFilter& filter, size_t voiceIndex);
 void updateSVFCoefficients(SVFilter& filter, float invSampleRate);
 
 // No modulation parameters
-float processSVFilter(SVFilter& filter, float input, uint32_t voiceIndex);
+void processSVFilter(SVFilter& filter, float& inOutL, float& inOutR, uint32_t voiceIndex);
 
 // With modulation parameters
-float processSVFilter(SVFilter& filter,
-                      float input,
-                      uint32_t voiceIndex,
-                      float cutoffHz,
-                      float resonance,
-                      float invSampleRate);
+void processSVFilter(SVFilter& filter,
+                     float& inOutL,
+                     float& inOutR,
+                     uint32_t voiceIndex,
+                     float cutoffHz,
+                     float resonance,
+                     float invSampleRate);
 
 // ==== Ladder Helpers ====
 void initLadderFilter(LadderFilter& filter, size_t voiceIndex);
@@ -69,13 +72,15 @@ void initLadderFilter(LadderFilter& filter, size_t voiceIndex);
 void updateLadderCoefficient(LadderFilter& filter, float invSampleRate);
 
 // No modulation parameters
-float processLadderFilter(LadderFilter& filter, float input, uint32_t voiceIndex);
+void processLadderFilter(LadderFilter& filter, float& inOutL, float& inOutR, uint32_t voiceIndex);
+
 // With modulation parameters
-float processLadderFilter(LadderFilter& filter,
-                          float input,
-                          uint32_t voiceIndex,
-                          float cutoffHz,
-                          float resonance,
-                          float invSampleRate);
+void processLadderFilter(LadderFilter& filter,
+                         float& inOutL,
+                         float& inOutR,
+                         uint32_t voiceIndex,
+                         float cutoffHz,
+                         float resonance,
+                         float invSampleRate);
 
 } // namespace synth::filters

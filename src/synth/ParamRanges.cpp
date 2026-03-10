@@ -1,5 +1,6 @@
 #include "ParamRanges.h"
 #include <algorithm>
+#include <cstdint>
 
 namespace synth::param::ranges {
 
@@ -76,6 +77,17 @@ float clampResonanceMod(float resonanceMod) {
 }
 } // namespace mod
 
+namespace unison {
+int8_t clampVoices(int8_t voices) {
+  return std::clamp(voices, VOICES_MIN, VOICES_MAX);
+}
+float clampDetune(float detune) {
+  return std::clamp(detune, DETUNE_MIN, DETUNE_MAX);
+}
+float clampSpread(float spread) {
+  return std::clamp(spread, SPREAD_MIN, SPREAD_MAX);
+}
+} // namespace unison
 // Global Param Helpers
 namespace global {
 float clampMasterGain(float masterGain) {

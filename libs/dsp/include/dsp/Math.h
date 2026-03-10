@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <cstdint>
 namespace dsp::math {
 
@@ -42,5 +43,29 @@ float expCurve(float t, float k);
 float expCurve(float t, float k, float invK);
 
 float calcPortamento(float t, float sampleRate);
+
+// ==============
+// Unison
+// ==============
+// Equal-power pan law. panPosition: -1.0 (full left) to +1.0 (full right).
+// At center (0.0), both gains ≈ 0.707 (−3dB).
+inline void panToLR(float panPosition, float& gainL, float& gainR) {
+  float angle = (panPosition + 1.0f) * (HALF_PI_F * 0.5f);
+  gainL = std::cos(angle);
+  gainR = std::sin(angle);
+}
+
+// 1/sqrt(N) gain compensation for stacked nearly-correlated signals.
+inline float unisonGainComp(int voices) {
+  return (voices <= 1) ? 1.0f : 1.0f / std::sqrt(static_cast<float>(voices));
+}
+
+// Compute N symmetric detune offsets in semitones from a total spread in cents.
+// count=1 writes 0. count>1: [-spread/2, ..., +spread/2] cents → semitones.
+void computeDetuneOffsets(float* out, int count, float detuneCents);
+
+// Compute N symmetric pan positions in [-width, +width].
+// count=1 writes 0 (center). width=1 spans full stereo field.
+void computePanPositions(float* out, int count, float width);
 
 } // namespace dsp::math

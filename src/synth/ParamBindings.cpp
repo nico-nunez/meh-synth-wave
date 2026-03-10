@@ -8,6 +8,7 @@
 #include "synth/Noise.h"
 #include "synth/ParamRanges.h"
 #include "synth/Saturator.h"
+#include "synth/Unison.h"
 #include "synth/VoicePool.h"
 #include "synth/WavetableOsc.h"
 
@@ -156,6 +157,16 @@ void bindPorta(ParamBinding* bindings, voices::Portamento& porta) {
   bindings[PORTA_ENABLED] = makeParamBinding(&porta.enabled);
 }
 
+void bindUnison(ParamBinding* bindings, unison::UnisonState& uni) {
+  bindings[UNISON_VOICES] =
+      makeParamBinding(&uni.voices, ranges::unison::VOICES_MIN, ranges::unison::VOICES_MAX);
+  bindings[UNISON_DETUNE] =
+      makeParamBinding(&uni.detune, ranges::unison::DETUNE_MIN, ranges::unison::DETUNE_MAX);
+  bindings[UNISON_SPREAD] =
+      makeParamBinding(&uni.spread, ranges::unison::SPREAD_MIN, ranges::unison::SPREAD_MAX);
+  bindings[UNISON_ENABLED] = makeParamBinding(&uni.enabled);
+}
+
 // Handle updates to params with derived values
 void onParamUpdate(VoicePool& pool, ParamID id) {
   switch (id) {
@@ -242,6 +253,23 @@ void onParamUpdate(VoicePool& pool, ParamID id) {
     break;
   }
 
+  case UNISON_ENABLED:
+    if (pool.unison.enabled) {
+      unison::updateDetuneOffsets(pool.unison);
+      unison::updatePanPositions(pool.unison);
+      unison::updateGainComp(pool.unison);
+    }
+    break;
+
+  case UNISON_VOICES:
+  case UNISON_DETUNE:
+    unison::updateDetuneOffsets(pool.unison);
+    unison::updateGainComp(pool.unison);
+    [[fallthrough]];
+  case UNISON_SPREAD:
+    unison::updatePanPositions(pool.unison);
+    break;
+
     // No special handling needed for other params like
     // Oscillator pitch params - no active voice updates (avoid clicks)
   default:
@@ -294,6 +322,7 @@ void initParamRouter(ParamRouter& router, VoicePool& pool) {
                                                        ranges::global::MASTER_GAIN_MAX);
   bindMono(router.paramBindings, pool.mono);
   bindPorta(router.paramBindings, pool.porta);
+  bindUnison(router.paramBindings, pool.unison);
 
   initMIDIBindings(router);
 }

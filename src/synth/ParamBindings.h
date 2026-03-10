@@ -118,6 +118,11 @@ enum ParamID {
   PORTA_LEGATO,
   PORTA_ENABLED,
 
+  UNISON_VOICES,
+  UNISON_DETUNE,
+  UNISON_SPREAD,
+  UNISON_ENABLED,
+
   UNKOWN,
   PARAM_COUNT,
 };
@@ -245,6 +250,10 @@ constexpr ParamMapping PARAM_NAMES[] = {
     {PORTA_LEGATO, "porta.legato", ParamValueType::BOOL},
     {PORTA_ENABLED, "porta.enabled", ParamValueType::BOOL},
 
+    {UNISON_VOICES, "unison.voices", ParamValueType::INT8},
+    {UNISON_DETUNE, "unison.detune", ParamValueType::FLOAT},
+    {UNISON_SPREAD, "unison.spread", ParamValueType::FLOAT},
+    {UNISON_ENABLED, "unison.enabled", ParamValueType::BOOL},
 };
 
 inline constexpr ParamMapping PARAM_MAPPING_NOT_FOUND{PARAM_COUNT,
