@@ -22,7 +22,6 @@ struct SVFilter {
   // Cached coefficients (cold, recomputed on param change)
   SVFCoeffs coeffs{};
 
-  // TODO(nico): need to define value ranges
   // Global settings (cold)
   SVFMode mode = SVFMode::LP;
   float cutoff = 1000.0f; // Hz
@@ -32,14 +31,18 @@ struct SVFilter {
 
 // ==== Ladder Filter (Moog Style) ====
 struct LadderFilter {
-  LadderState statesL[MAX_VOICES]; // (hot path)
-  LadderState statesR[MAX_VOICES]; // (hot path)
+  // ==== <hot path> ====
+  LadderState statesL[MAX_VOICES]{};
+  LadderState statesR[MAX_VOICES]{};
+
+  // NR solver state for nonlinear TPT (per-voice, per-channel)
+  float y4EstimateL[MAX_VOICES] = {};
+  float y4EstimateR[MAX_VOICES] = {};
+  // ==== </hot path> ====
 
   // Cached coefficient (cold, recomputed on param change)
-  // frequency coefficient: 2 * sin(π * cutoff / sampleRate)
   float coeff = 0.0f;
 
-  // TODO(nico): need to define value ranges
   // Global settings (cold data)
   float cutoff = 1000.0f; // Hz
   float resonance = 0.3f; // 0.0–1.0 (mapped to 0–4 internally)

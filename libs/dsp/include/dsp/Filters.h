@@ -26,8 +26,13 @@ struct LadderState {
   float s[4] = {0, 0, 0, 0};
 };
 
-float processLadder(float input, float f, float resonance, LadderState& st);
-float processLadderNonlinear(float input, float f, float resonance, float drive, LadderState& st);
+float processLadder(float input, float feqCoeff, float resonance, LadderState& state);
+float processLadderNonlinear(float input,
+                             float freqCoeff,
+                             float resonance,
+                             float drive,
+                             float& y4Estimate,
+                             LadderState& state);
 
 /* DC Block is a high-pass filter that removes DC offset (constant bias) from
  * the audio signal.

@@ -35,33 +35,76 @@ SVFOutputs processSVF(float input, const SVFCoeffs& c, SVFState& s) {
 }
 
 // ==== Ladder Filter (Moog Style) ====
-// resonance: 0 (no resonance) to 4 (self-oscillation)
-// f: 2 * math::fastSin(M_PI * normalizedFreq)
-float processLadder(float input, float f, float resonance, LadderState& st) {
-  float feedback = resonance * st.s[3];
-  float x = input - feedback;
+float processLadder(float input, float freqCoeff, float resonance, LadderState& state) {
+  float G = freqCoeff / (1.0f + freqCoeff);
+  float G2 = G * G;
+  float G3 = G2 * G;
+  float G4 = G3 * G;
 
-  st.s[0] += f * (x - st.s[0]);
-  st.s[1] += f * (st.s[0] - st.s[1]);
-  st.s[2] += f * (st.s[1] - st.s[2]);
-  st.s[3] += f * (st.s[2] - st.s[3]);
+  // State contribution (what the filter would output with zero input)
+  float S = (1.0f - G) * (G3 * state.s[0] + G2 * state.s[1] + G * state.s[2] + state.s[3]);
 
-  return st.s[3];
+  // Solve implicit feedback
+  float u = (input - resonance * S) / (1.0f + resonance * G4);
+
+  // Process four cascaded one-pole TPT integrators
+  float x = u;
+  for (int i = 0; i < 4; i++) {
+    float v = G * (x - state.s[i]);
+    float y = v + state.s[i];
+    state.s[i] = y + v;
+    x = y;
+  }
+
+  return x; // 4-pole LP output
 }
 
-float processLadderNonlinear(float input, float f, float resonance, float drive, LadderState& st) {
-  // Nonlinear feedback — tanh prevents harsh blowup at high resonance
-  float feedback = resonance * math::fastTanh(st.s[3]);
+float processLadderNonlinear(float input,
+                             float freqCoeff,
+                             float resonance,
+                             float drive,
+                             float& y4Estimate,
+                             LadderState& state) {
+  float G = freqCoeff / (1.0f + freqCoeff);
+  float G2 = G * G;
+  float G3 = G2 * G;
+  float G4 = G3 * G;
 
-  // Drive into the input — saturates before the filter stages
-  float x = math::fastTanh(drive * input - feedback);
+  // State contribution from previous sample
+  float S = (1.0f - G) * (G3 * state.s[0] + G2 * state.s[1] + G * state.s[2] + state.s[3]);
 
-  st.s[0] += f * (x - st.s[0]);
-  st.s[1] += f * (st.s[0] - st.s[1]);
-  st.s[2] += f * (st.s[1] - st.s[2]);
-  st.s[3] += f * (st.s[2] - st.s[3]);
+  float a = drive * input;
 
-  return st.s[3];
+  // Newton-Raphson: solve for y4
+  // Initial guess: previous sample's y4 (excellent predictor at audio rate)
+  float y4 = y4Estimate;
+
+  for (int iter = 0; iter < 2; iter++) {
+    float t4 = math::fastTanh(y4);
+    float uv = a - resonance * t4;
+    float tu = math::fastTanh(uv);
+
+    float f = G4 * tu + S - y4;
+    float fp = -G4 * resonance * (1.0f - tu * tu) * (1.0f - t4 * t4) - 1.0f;
+
+    y4 -= f / fp;
+  }
+
+  y4Estimate = y4; // store for next sample's initial guess
+
+  // Compute u from solved y4
+  float u = math::fastTanh(a - resonance * math::fastTanh(y4));
+
+  // Process four TPT one-pole stages (linear internals)
+  float x = u;
+  for (int i = 0; i < 4; i++) {
+    float v = G * (x - state.s[i]);
+    float y = v + state.s[i];
+    state.s[i] = y + v;
+    x = y;
+  }
+
+  return x;
 }
 
 float dcBlock(float sample, float& state, float coefficient) {

@@ -117,6 +117,8 @@ void enableLadderFilter(LadderFilter& filter, bool enable) {
     for (uint32_t i = 0; i < MAX_VOICES; i++) {
       filter.statesL[i] = dsp::filters::LadderState{};
       filter.statesR[i] = dsp::filters::LadderState{};
+      filter.y4EstimateL[i] = 0.0f;
+      filter.y4EstimateR[i] = 0.0f;
     }
   }
   filter.enabled = enable;
@@ -125,11 +127,13 @@ void enableLadderFilter(LadderFilter& filter, bool enable) {
 void initLadderFilter(LadderFilter& filter, size_t voiceIndex) {
   filter.statesL[voiceIndex] = LadderState{};
   filter.statesR[voiceIndex] = LadderState{};
+  filter.y4EstimateL[voiceIndex] = 0.0f;
+  filter.y4EstimateR[voiceIndex] = 0.0f;
 }
 
 void updateLadderCoefficient(LadderFilter& filter, float invSampleRate) {
   float normalizedCutoff = normalizeCutoff(filter.cutoff, invSampleRate);
-  filter.coeff = 2.0f * dsp::math::fastSin(dsp::math::PI_F * normalizedCutoff);
+  filter.coeff = dsp::math::fastTan(dsp::math::PI_F * normalizedCutoff);
 }
 
 // Use when NOT passing modulation values (cutoff and/or resonance)
@@ -144,11 +148,13 @@ void processLadderFilter(LadderFilter& filter, float& inOutL, float& inOutR, uin
                                                   filter.coeff,
                                                   res,
                                                   filter.drive,
+                                                  filter.y4EstimateL[voiceIndex],
                                                   filter.statesL[voiceIndex]);
     inOutR = dsp::filters::processLadderNonlinear(inOutR,
                                                   filter.coeff,
                                                   res,
                                                   filter.drive,
+                                                  filter.y4EstimateR[voiceIndex],
                                                   filter.statesR[voiceIndex]);
   } else {
     inOutL = dsp::filters::processLadder(inOutL, filter.coeff, res, filter.statesL[voiceIndex]);
@@ -169,7 +175,7 @@ void processLadderFilter(LadderFilter& filter,
 
   float normalizedCutoff = normalizeCutoff(cutoffHz, invSampleRate);
   float coeff = std::abs(filter.cutoff - cutoffHz) > 0.001f
-                    ? 2.0f * dsp::math::fastSin(dsp::math::PI_F * normalizedCutoff)
+                    ? dsp::math::fastTan(dsp::math::PI_F * normalizedCutoff)
                     : filter.coeff;
 
   float res = resonance * 4.0f;
@@ -179,11 +185,13 @@ void processLadderFilter(LadderFilter& filter,
                                                   coeff,
                                                   res,
                                                   filter.drive,
+                                                  filter.y4EstimateL[voiceIndex],
                                                   filter.statesL[voiceIndex]);
     inOutR = dsp::filters::processLadderNonlinear(inOutR,
                                                   coeff,
                                                   res,
                                                   filter.drive,
+                                                  filter.y4EstimateR[voiceIndex],
                                                   filter.statesR[voiceIndex]);
   } else {
     inOutL = dsp::filters::processLadder(inOutL, coeff, res, filter.statesL[voiceIndex]);

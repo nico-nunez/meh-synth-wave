@@ -709,6 +709,9 @@ void processAndMixOscs(VoicePool& pool,
 
 // Signal Chain processing
 void processSignalChain(VoicePool& pool, float& signalL, float& signalR, uint32_t voiceIndex) {
+  using dsp::filters::modulateCutoff;
+  using param::ranges::mod::clampCutoffMod;
+
   auto& svf = pool.svf;
   auto& ladder = pool.ladder;
 
@@ -721,9 +724,9 @@ void processSignalChain(VoicePool& pool, float& signalL, float& signalR, uint32_
     switch (pool.signalChain.slots[i]) {
 
     case SignalProcessor::SVF: {
-      float cutoff = dsp::filters::modulateCutoff(svf.cutoff,
-                                                  destValues[ModDest::SVFCutoff][v] +
-                                                      lfoContribs[ModDest::SVFCutoff]);
+      float cutoff = modulateCutoff(svf.cutoff,
+                                    clampCutoffMod(destValues[ModDest::SVFCutoff][v] +
+                                                   lfoContribs[ModDest::SVFCutoff]));
       float resonance =
           svf.resonance + destValues[ModDest::SVFResonance][v] + lfoContribs[ModDest::SVFResonance];
       filters::processSVFilter(svf, signalL, signalR, v, cutoff, resonance, pool.invSampleRate);
@@ -731,9 +734,9 @@ void processSignalChain(VoicePool& pool, float& signalL, float& signalR, uint32_
     }
 
     case SignalProcessor::Ladder: {
-      float cutoff = dsp::filters::modulateCutoff(ladder.cutoff,
-                                                  destValues[ModDest::LadderCutoff][v] +
-                                                      lfoContribs[ModDest::LadderCutoff]);
+      float cutoff = modulateCutoff(ladder.cutoff,
+                                    clampCutoffMod(destValues[ModDest::LadderCutoff][v] +
+                                                   lfoContribs[ModDest::LadderCutoff]));
       float resonance = ladder.resonance + destValues[ModDest::LadderResonance][v] +
                         lfoContribs[ModDest::LadderResonance];
       filters::processLadderFilter(ladder,

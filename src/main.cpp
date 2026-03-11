@@ -7,8 +7,6 @@
 
 #include "synth/Engine.h"
 
-#include "temp_tests/TempTests.h"
-
 #include <audio_io/AudioIO.h>
 #include <csignal>
 #include <cstdio>
@@ -53,8 +51,6 @@ static void getUserInput(synth::Engine& engine, synth_io::hSynthSession sessionP
 int main() {
   using synth::Engine;
   using synth::EngineConfig;
-
-  synth::test::presetIO();
 
   // Query hardware for actual device parameters
   auto deviceInfo = synth_io::queryDefaultDevice();
