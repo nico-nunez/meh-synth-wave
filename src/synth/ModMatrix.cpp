@@ -55,6 +55,13 @@ bool clearRoutes(ModMatrix& matrix) {
 }
 
 // ====== Steps Management =======
+void clearPrevModDests(ModMatrix& matrix) {
+  for (uint8_t d = 0; d < ModDest::DEST_COUNT; d++) {
+    for (uint8_t v = 0; v < MAX_VOICES; v++) {
+      matrix.prevDestValues[d][v] = 0;
+    }
+  }
+}
 void clearModDestSteps(ModMatrix& matrix) {
   for (uint8_t d = 0; d < ModDest::DEST_COUNT; d++) {
     for (uint8_t v = 0; v < MAX_VOICES; v++) {

@@ -4,6 +4,7 @@
 #include "synth/ModMatrix.h"
 #include "synth/Noise.h"
 #include "synth/ParamBindings.h"
+#include "synth/PresetApply.h"
 #include "synth/WavetableBanks.h"
 #include "synth/WavetableOsc.h"
 
@@ -252,10 +253,41 @@ void parseCommand(const std::string& line, Engine& engine, s_io::hSynthSession s
     if (!errStatus)
       printf("OK\n");
 
-    // GET: print param value
+    // ==== Get Current Param Value =====
   } else if (cmd == "get") {
+    using wavetable::banks::getBankByID;
     std::string paramName;
     iss >> paramName;
+
+    // Direct-handled params — bypass binding system and event queue
+    if (paramName == "osc1.bank") {
+      if (engine.voicePool.osc1.bank)
+        printf("%s = %s\n", paramName.c_str(), engine.voicePool.osc1.bank->name);
+      else
+        printf("%s bank is null\n", paramName.c_str());
+      return;
+    }
+    if (paramName == "osc2.bank") {
+      if (engine.voicePool.osc2.bank)
+        printf("%s = %s\n", paramName.c_str(), engine.voicePool.osc2.bank->name);
+      else
+        printf("%s bank is null\n", paramName.c_str());
+      return;
+    }
+    if (paramName == "osc3.bank") {
+      if (engine.voicePool.osc3.bank)
+        printf("%s = %s\n", paramName.c_str(), engine.voicePool.osc3.bank->name);
+      else
+        printf("%s bank is null\n", paramName.c_str());
+      return;
+    }
+    if (paramName == "osc4.bank") {
+      if (engine.voicePool.osc4.bank)
+        printf("%s = %s\n", paramName.c_str(), engine.voicePool.osc4.bank->name);
+      else
+        printf("%s bank is null\n", paramName.c_str());
+      return;
+    }
 
     pb::ParamMapping param = pb::findParamByName(paramName.c_str());
     if (param.id == param::bindings::PARAM_COUNT) {
@@ -267,7 +299,7 @@ void parseCommand(const std::string& line, Engine& engine, s_io::hSynthSession s
 
     printf("%s = %.2f\n", paramName.c_str(), rawValue);
 
-    // LIST: print available param names
+    // ==== List Confirgurable Params =====
   } else if (cmd == "list") {
 
     std::string optionalParam;
@@ -275,22 +307,28 @@ void parseCommand(const std::string& line, Engine& engine, s_io::hSynthSession s
 
     pb::printParamList(optionalParam.empty() ? nullptr : optionalParam.c_str());
 
+    // ==== Mod Matrix =====
+  } else if (cmd == "mod") {
+    mm::parseModCommand(iss, engine.voicePool.modMatrix);
+
+    // ==== Presets =====
+  } else if (cmd == "preset") {
+    preset::processPresetCmd(iss, engine);
+
     // HELP: print available commands
   } else if (cmd == "help") {
     printf("Commands:\n");
     printf("  set <param> <value>  - Set parameter value\n");
     printf("  get <param>          - Query parameter value\n");
     printf("  list                 - List all parameters\n");
+    printf("  mod ...              - Modulation routing (mod help)\n");
+    printf("  preset ...           - Preset management (preset help)\n");
     printf("  help                 - Show this help\n");
     printf("  quit                 - Exit\n");
     printf("\nNote commands: a-k (play notes)\n");
-
   } else if (cmd == "clear") {
     // Clear console
     system("clear");
-
-  } else if (cmd == "mod") {
-    mm::parseModCommand(iss, engine.voicePool.modMatrix);
 
     // Invalid command
   } else if (cmd != "quit") {

@@ -246,7 +246,7 @@ struct Parser {
           setError("invalid escape character");
           return {};
         }
-      } else if (c < 0x20) {
+      } else if (static_cast<unsigned char>(c) < 0x20) {
         setError("control character in string");
         return {};
       } else {

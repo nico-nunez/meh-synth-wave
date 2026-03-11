@@ -8,12 +8,12 @@
   },
   "oscillators": {
     "osc1": {
-      "bank": "sinetosaw", "scanPos": 0.3, "mixLevel": 1.0,
+      "bank": "sine_to_saw", "scanPos": 0.3, "mixLevel": 1.0,
       "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
       "octaveOffset": 0, "detuneAmount": 6.0, "enabled": true
     },
     "osc2": {
-      "bank": "sinetosaw", "scanPos": 0.3, "mixLevel": 0.8,
+      "bank": "sine_to_saw", "scanPos": 0.3, "mixLevel": 0.8,
       "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
       "octaveOffset": 0, "detuneAmount": -6.0, "enabled": true
     },
