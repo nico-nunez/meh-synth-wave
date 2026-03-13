@@ -42,6 +42,25 @@ WavetableBank* getBankByName(const char* name) {
   return nullptr;
 }
 
+// ====================
+// Parsing Helpers
+// ====================
+const char* bankIDToString(BankID id) {
+  auto bank = getBankByID(id);
+  if (!bank)
+    return UNKNOWN_BANK;
+
+  return bank->name;
+}
+
+BankID parseBankID(const char* name) {
+  for (int i = 0; i < s_registryCount; i++)
+    if (std::strcmp(s_registry[i]->name, name))
+      return static_cast<BankID>(i);
+
+  return BankID::Unknown;
+}
+
 // ================================
 // Bank Initialization
 // ================================

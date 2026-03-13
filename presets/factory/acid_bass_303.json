@@ -26,9 +26,9 @@
       "bank": "sine", "scanPos": 0.0, "mixLevel": 0.0,
       "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
       "octaveOffset": 0, "detuneAmount": 0.0, "enabled": false
-    }
+    },
+    "noise": { "mixLevel": 0.0, "type": "white", "enabled": false }
   },
-  "noise": { "mixLevel": 0.0, "type": "white", "enabled": false },
   "envelopes": {
     "ampEnv": {
       "attackMs": 1.0, "decayMs": 250.0, "sustainLevel": 0.5,
@@ -47,7 +47,9 @@
     "svf": { "mode": "lp", "cutoff": 300.0, "resonance": 0.8, "enabled": true },
     "ladder": { "cutoff": 1000.0, "resonance": 0.3, "drive": 1.0, "enabled": false }
   },
-  "saturator": { "drive": 1.8, "mix": 0.6, "enabled": true },
+  "fx": {
+    "saturator": { "drive": 1.8, "mix": 0.6, "enabled": true }
+  },
   "lfos": {
     "lfo1": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false },
     "lfo2": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false },
@@ -57,8 +59,10 @@
     { "source": "filterEnv", "destination": "svf.cutoff", "amount": 3.5 }
   ],
   "signalChain": ["svf", "ladder", "saturator"],
-  "mono": { "enabled": true, "legato": true },
-  "portamento": { "time": 25.0, "legato": true, "enabled": true },
-  "unison": { "voices": 4, "detune": 20.0, "spread": 0.5, "enabled": false },
+  "voice": {
+    "mono": { "enabled": true, "legato": true },
+    "portamento": { "time": 25.0, "legato": true, "enabled": true },
+    "unison": { "voices": 4, "detune": 20.0, "spread": 0.5, "enabled": false }
+  },
   "global": { "pitchBendRange": 2.0 }
 }

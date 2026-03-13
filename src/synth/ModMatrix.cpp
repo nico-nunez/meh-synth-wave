@@ -1,4 +1,5 @@
 #include "ModMatrix.h"
+
 #include "synth/Types.h"
 
 #include <cstdint>
@@ -98,20 +99,6 @@ ModDest modDestFromString(const char* input) {
   }
   return ModDest::NoDest;
 };
-
-const char* modSrcToString(ModSrc src) {
-  for (auto& m : modSrcMappings)
-    if (m.src == src)
-      return m.name;
-  return "unknown";
-}
-
-const char* modDestToString(ModDest dest) {
-  for (auto& m : modDestMappings)
-    if (m.dest == dest)
-      return m.name;
-  return "unknown";
-}
 
 void parseAddModCommand(std::istringstream& iss, ModMatrix& modMatrix) {
   std::string srcStr, destStr;

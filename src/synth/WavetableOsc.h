@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Types.h"
+#include "synth/Types.h"
 
 #include "dsp/Wavetable.h"
 
@@ -87,9 +87,8 @@ float getFmInputValue(WavetableOscModState& modState,
                       FMSource dest);
 
 // ===================
-// Serialization
+// Parsing Helpers
 // ===================
-
 struct FMSourceMapping {
   const char* name;
   FMSource src;
@@ -107,13 +106,15 @@ inline FMSource parseFMSource(const char* name) {
   for (const auto& m : fmSourceMappings)
     if (std::strcmp(m.name, name) == 0)
       return m.src;
-  return FMSource::None; // unknown strings → None
+
+  return FMSource::None;
 }
 
 inline const char* fmSourceToString(FMSource src) {
   for (const auto& m : fmSourceMappings)
     if (m.src == src)
       return m.name;
+
   return "none";
 }
 

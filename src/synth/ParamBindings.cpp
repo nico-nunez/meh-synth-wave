@@ -1,16 +1,18 @@
 #include "ParamBindings.h"
 
-#include "Envelope.h"
-#include "dsp/Math.h"
+#include "synth/Envelope.h"
 #include "synth/Filters.h"
 #include "synth/LFO.h"
 #include "synth/MonoMode.h"
 #include "synth/Noise.h"
 #include "synth/ParamDefs.h"
 #include "synth/Saturator.h"
+#include "synth/Types.h"
 #include "synth/Unison.h"
 #include "synth/VoicePool.h"
 #include "synth/WavetableOsc.h"
+
+#include "dsp/Math.h"
 
 #include <cmath>
 #include <cstddef>
@@ -367,7 +369,7 @@ ParamID getParamIDByName(const char* name) {
       return static_cast<ParamID>(i);
     }
   }
-  return UNKNOWN;
+  return ParamID::UNKNOWN;
 }
 
 // ParamID → String (for 'get' commands, help text, errors)
@@ -393,20 +395,4 @@ void printParamList(const char* optionalParam) {
   }
 }
 
-SVFMode getSVFModeType(const char* inputValue) {
-  if (strcasecmp(inputValue, "bp") == 0)
-    return filters::SVFMode::BP;
-
-  if (strcasecmp(inputValue, "hp") == 0)
-    return filters::SVFMode::HP;
-
-  if (strcasecmp(inputValue, "lp") == 0)
-    return filters::SVFMode::LP;
-
-  if (strcasecmp(inputValue, "notch") == 0)
-    return filters::SVFMode::Notch;
-
-  // default to Sine
-  return filters::SVFMode::LP;
-};
 } // namespace synth::param::bindings

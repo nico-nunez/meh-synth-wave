@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 
 namespace synth::signal_chain {
 
@@ -21,5 +22,33 @@ struct SignalChain {
 
 void setChain(SignalChain& chain, const SignalProcessor* procs, uint8_t count);
 void clearChain(SignalChain& chain);
+
+struct SignalProcessorMapping {
+  const char* name;
+  signal_chain::SignalProcessor proc;
+};
+
+// ============================
+// Parsing Helpers
+// ============================
+inline constexpr SignalProcessorMapping signalProcessorMappings[] = {
+    {"svf", signal_chain::SignalProcessor::SVF},
+    {"ladder", signal_chain::SignalProcessor::Ladder},
+    {"saturator", signal_chain::SignalProcessor::Saturator},
+};
+
+inline signal_chain::SignalProcessor parseSignalProcessor(const char* name) {
+  for (const auto& m : signalProcessorMappings)
+    if (std::strcmp(m.name, name) == 0)
+      return m.proc;
+  return signal_chain::SignalProcessor::None;
+}
+
+inline const char* signalProcessorToString(signal_chain::SignalProcessor proc) {
+  for (const auto& m : signalProcessorMappings)
+    if (m.proc == proc)
+      return m.name;
+  return "unknown";
+}
 
 } // namespace synth::signal_chain

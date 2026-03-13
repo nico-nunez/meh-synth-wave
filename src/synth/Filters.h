@@ -4,15 +4,19 @@
 
 #include "dsp/Filters.h"
 #include <cstddef>
+#include <cstring>
 
 namespace synth::filters {
 
-enum class SVFMode { LP, HP, BP, Notch, MODE_COUNT };
 using dsp::filters::SVFCoeffs;
 using dsp::filters::SVFOutputs;
 using dsp::filters::SVFState;
 
 using dsp::filters::LadderState;
+
+// TODO: consider adding "None" (aka disabled)
+enum class SVFMode { LP, HP, BP, Notch, Unknown, COUNT };
+inline constexpr const char* UNKNOWN_MODE = "unknown";
 
 // ==== State Variable Filter (SVF) ====
 struct SVFilter {
@@ -85,5 +89,37 @@ void processLadderFilter(LadderFilter& filter,
                          float cutoffHz,
                          float resonance,
                          float invSampleRate);
+
+// ============================================================
+// Parsing Helpers
+// ============================================================
+
+struct SVFModeMapping {
+  const char* name;
+  filters::SVFMode mode;
+};
+
+// TODO: consider adding "None" (aka disabled)
+inline constexpr SVFModeMapping svfModeMappings[] = {
+    {"lp", filters::SVFMode::LP},
+    {"hp", filters::SVFMode::HP},
+    {"bp", filters::SVFMode::BP},
+    {"notch", filters::SVFMode::Notch},
+};
+
+inline filters::SVFMode parseSVFMode(const char* name) {
+  for (const auto& m : svfModeMappings)
+    if (std::strcmp(m.name, name) == 0)
+      return m.mode;
+
+  return filters::SVFMode::Unknown;
+}
+
+inline const char* svfModeToString(filters::SVFMode mode) {
+  for (const auto& m : svfModeMappings)
+    if (m.mode == mode)
+      return m.name;
+  return UNKNOWN_MODE;
+}
 
 } // namespace synth::filters

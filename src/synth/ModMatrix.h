@@ -181,5 +181,38 @@ inline constexpr ModDestMapping modDestMappings[ModDest::DEST_COUNT - 1] = // No
         {"lfo3.amplitude", ModDest::LFO3Amplitude},
 };
 
+// ============================================================
+// Parsing Helpers
+// ============================================================
+
 void parseModCommand(std::istringstream& iss, ModMatrix& modMatrix);
+
+inline mod_matrix::ModSrc parseModSrc(const char* name) {
+  for (const auto& m : mod_matrix::modSrcMappings)
+    if (std::strcmp(m.name, name) == 0)
+      return m.src;
+  return mod_matrix::ModSrc::NoSrc;
+}
+
+inline const char* modSrcToString(mod_matrix::ModSrc src) {
+  for (const auto& m : mod_matrix::modSrcMappings)
+    if (m.src == src)
+      return m.name;
+  return "unknown";
+}
+
+inline mod_matrix::ModDest parseModDest(const char* name) {
+  for (const auto& m : mod_matrix::modDestMappings)
+    if (std::strcmp(m.name, name) == 0)
+      return m.dest;
+  return mod_matrix::ModDest::NoDest;
+}
+
+inline const char* modDestToString(mod_matrix::ModDest dest) {
+  for (const auto& m : mod_matrix::modDestMappings)
+    if (m.dest == dest)
+      return m.name;
+  return "unknown";
+}
+
 } // namespace synth::mod_matrix

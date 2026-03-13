@@ -5,7 +5,8 @@
 namespace synth::wavetable::banks {
 using dsp::wavetable::WavetableBank;
 
-enum BankID { Sine = 0, Saw, Square, Triangle, SineToSaw, COUNT };
+enum BankID { Sine = 0, Saw, Square, Triangle, SineToSaw, Unknown, COUNT };
+inline constexpr const char* UNKNOWN_BANK = "unknown";
 
 void initFactoryBanks();
 
@@ -13,5 +14,17 @@ void registerBank(BankID id, WavetableBank* bank);
 
 WavetableBank* getBankByID(BankID id);
 WavetableBank* getBankByName(const char* name);
+
+// ========================
+// Parsing Helpers
+// ========================
+
+struct BankMapping {
+  const char* name;
+  BankID id;
+};
+
+const char* bankIDToString(BankID id);
+BankID parseBankID(const char* name);
 
 } // namespace synth::wavetable::banks

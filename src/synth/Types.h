@@ -17,4 +17,6 @@ using MidiNote = uint8_t;
 // 1.0f / std::sqrtf(MAX_VOICES);
 inline constexpr float VOICE_GAIN = 1.0f / 8.0f;
 
+inline constexpr const char* UNKNOWN_STR = "unknown";
+
 } // namespace synth

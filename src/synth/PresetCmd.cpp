@@ -1,7 +1,11 @@
 #include "PresetCmd.h"
 
+#include "synth/ParamDefs.h"
+#include "synth/Preset.h"
 #include "synth/PresetApply.h"
 #include "synth/PresetIO.h"
+#include "synth/WavetableBanks.h"
+#include <cstdint>
 
 namespace synth::preset {
 
@@ -73,7 +77,7 @@ void processPresetCmd(std::istringstream& iss, Engine& engine) {
 
     // ---- preset init ----
   } else if (subCmd == "init") {
-    auto initPreset = createInitPreset();
+    auto initPreset = createDefaultPreset();
     auto applyResult = applyPreset(initPreset, engine);
 
     printf("Init preset applied\n");
@@ -122,32 +126,55 @@ void processPresetCmd(std::istringstream& iss, Engine& engine) {
     printf("Path:     %s\n", loadResult.filePath.c_str());
 
     // Quick summary of what's enabled
-    int oscCount = p.osc1.enabled + p.osc2.enabled + p.osc3.enabled + p.osc4.enabled;
+    using param::ParamID;
+    using wavetable::banks::bankIDToString;
+
+    bool osc1Enabled = static_cast<bool>(getPresetValue(p, ParamID::OSC1_ENABLED));
+    bool osc2Enabled = static_cast<bool>(getPresetValue(p, ParamID::OSC2_ENABLED));
+    bool osc3Enabled = static_cast<bool>(getPresetValue(p, ParamID::OSC3_ENABLED));
+    bool osc4Enabled = static_cast<bool>(getPresetValue(p, ParamID::OSC4_ENABLED));
+
+    int oscCount = osc1Enabled + osc2Enabled + osc3Enabled + osc4Enabled;
     printf("Oscs:     %d enabled", oscCount);
-    if (p.osc1.enabled)
-      printf(" (1:%s", p.osc1.bank.c_str());
-    if (p.osc2.enabled)
-      printf(" 2:%s", p.osc2.bank.c_str());
-    if (p.osc3.enabled)
-      printf(" 3:%s", p.osc3.bank.c_str());
-    if (p.osc4.enabled)
-      printf(" 4:%s", p.osc4.bank.c_str());
+    if (osc1Enabled)
+      printf(" (1:%s", bankIDToString(p.oscBanks[0]));
+    if (osc2Enabled)
+      printf(" 2:%s", bankIDToString(p.oscBanks[1]));
+    if (osc3Enabled)
+      printf(" 3:%s", bankIDToString(p.oscBanks[2]));
+    if (osc4Enabled)
+      printf(" 4:%s", bankIDToString(p.oscBanks[3]));
     if (oscCount > 0)
       printf(")");
     printf("\n");
 
-    if (p.svf.enabled)
-      printf("SVF:      %s %.0fHz\n", p.svf.mode.c_str(), p.svf.cutoff);
-    if (p.ladder.enabled)
-      printf("Ladder:   %.0fHz\n", p.ladder.cutoff);
-    if (p.saturator.enabled)
-      printf("Sat:      drive=%.1f\n", p.saturator.drive);
-    if (!p.modMatrix.empty())
-      printf("Mod:      %zu routes\n", p.modMatrix.size());
-    if (p.mono.enabled)
-      printf("Mono:     on%s\n", p.mono.legato ? " (legato)" : "");
-    if (p.unison.enabled)
-      printf("Unison:   %d voices\n", p.unison.voices);
+    bool svfEnabled = static_cast<bool>(getPresetValue(p, ParamID::SVF_ENABLED));
+    bool ladderEnabled = static_cast<bool>(getPresetValue(p, ParamID::LADDER_ENABLED));
+    bool saturatorEnabled = static_cast<bool>(getPresetValue(p, ParamID::SATURATOR_ENABLED));
+    bool monoEnabled = static_cast<bool>(getPresetValue(p, ParamID::MONO_ENABLED));
+    bool portaEnabled = static_cast<bool>(getPresetValue(p, ParamID::PORTA_ENABLED));
+    bool unisonEnabled = static_cast<bool>(getPresetValue(p, ParamID::UNISON_ENABLED));
+
+    if (svfEnabled)
+      printf("SVF:      %s %.0fHz\n",
+             filters::svfModeToString(
+                 static_cast<filters::SVFMode>(getPresetValue(p, ParamID::SVF_MODE))),
+             getPresetValue(p, ParamID::SVF_CUTOFF));
+    if (ladderEnabled)
+      printf("Ladder:   %.0fHz\n", getPresetValue(p, ParamID::LADDER_CUTOFF));
+    if (saturatorEnabled)
+      printf("Sat:      drive=%.1f\n", getPresetValue(p, ParamID::SATURATOR_DRIVE));
+    if (p.modMatrixCount)
+      printf("Mod:      %u routes\n", p.modMatrixCount);
+    if (monoEnabled)
+      printf("Mono:     on%s\n",
+             static_cast<bool>(getPresetValue(p, ParamID::MONO_LEGATO)) ? " (legato)" : "");
+    if (portaEnabled)
+      printf("Porta:     on%s\n",
+             static_cast<bool>(getPresetValue(p, ParamID::PORTA_LEGATO)) ? " (legato)" : "");
+    if (unisonEnabled)
+      printf("Unison:   %d voices\n",
+             static_cast<uint8_t>(getPresetValue(p, ParamID::UNISON_VOICES)));
 
     for (const auto& w : loadResult.warnings)
       printf("  warning: %s\n", w.c_str());

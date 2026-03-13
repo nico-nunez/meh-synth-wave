@@ -74,6 +74,10 @@ struct Value {
   // Set key-value pair. Overwrites if key exists. No-op if not an object.
   Value& set(const char* key, Value val);
   Value& set(const std::string& key, Value val);
+
+  // Returns a mutable reference to the child object at key,
+  // creating it as an empty object if it doesn't exist.
+  Value& getOrCreate(const char* key);
 };
 
 // ============================================================

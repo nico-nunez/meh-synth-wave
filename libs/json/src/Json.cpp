@@ -64,14 +64,17 @@ static const Value NULL_VALUE{};
 size_t Value::size() const {
   if (type == Type::Array)
     return arrVals.size();
+
   if (type == Type::Object)
     return objEntries.size();
+
   return 0;
 }
 
 const Value& Value::at(size_t index) const {
   if (type != Type::Array || index >= arrVals.size())
     return NULL_VALUE;
+
   return arrVals[index];
 }
 
@@ -85,6 +88,7 @@ Value& Value::push(Value val) {
 const Value& Value::operator[](const char* key) const {
   if (type != Type::Object)
     return NULL_VALUE;
+
   for (const auto& entry : objEntries) {
     if (entry.first == key)
       return entry.second;
@@ -95,6 +99,7 @@ const Value& Value::operator[](const char* key) const {
 bool Value::has(const char* key) const {
   if (type != Type::Object)
     return false;
+
   for (const auto& entry : objEntries) {
     if (entry.first == key)
       return true;
@@ -109,6 +114,7 @@ Value& Value::set(const char* key, Value val) {
 Value& Value::set(const std::string& key, Value val) {
   if (type != Type::Object)
     return *this;
+
   for (auto& entry : objEntries) {
     if (entry.first == key) {
       entry.second = std::move(val);
@@ -117,6 +123,18 @@ Value& Value::set(const std::string& key, Value val) {
   }
   objEntries.emplace_back(key, std::move(val));
   return *this;
+}
+
+Value& Value::getOrCreate(const char* key) {
+  if (type != Type::Object)
+    return *this;
+
+  for (auto& entry : objEntries)
+    if (entry.first == key)
+      return entry.second;
+
+  objEntries.push_back({key, Value::object()});
+  return objEntries.back().second;
 }
 
 // ============================================================

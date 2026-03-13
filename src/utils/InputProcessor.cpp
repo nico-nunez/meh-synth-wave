@@ -25,6 +25,7 @@ namespace s_io = synth_io;
 
 namespace mm = mod_matrix;
 namespace pb = param::bindings;
+namespace osc = wavetable::osc;
 
 // ==== Internal Helpers ====
 namespace {
@@ -79,26 +80,6 @@ int setInputParam(const std::string& paramName,
   }
 
   return 0;
-}
-
-using FMSource = wavetable::osc::FMSource;
-FMSource parseFMSource(const char* s) {
-  if (strcasecmp(s, "osc1") == 0)
-    return FMSource::Osc1;
-  if (strcasecmp(s, "osc2") == 0)
-    return FMSource::Osc2;
-  if (strcasecmp(s, "osc3") == 0)
-    return FMSource::Osc3;
-  if (strcasecmp(s, "osc4") == 0)
-    return FMSource::Osc4;
-  return FMSource::None;
-}
-
-using NoiseType = noise::NoiseType;
-NoiseType parseNoiseType(const char* s) {
-  if (strcasecmp(s, "pink") == 0)
-    return noise::NoiseType::Pink;
-  return noise::NoiseType::White;
 }
 
 } // namespace
@@ -174,35 +155,35 @@ void parseCommand(const std::string& line, Engine& engine, s_io::hSynthSession s
     if (paramName == "osc1.fmSource") {
       std::string value;
       iss >> value;
-      engine.voicePool.osc1.fmSource = parseFMSource(value.c_str());
+      engine.voicePool.osc1.fmSource = osc::parseFMSource(value.c_str());
       return;
     }
 
     if (paramName == "osc2.fmSource") {
       std::string value;
       iss >> value;
-      engine.voicePool.osc2.fmSource = parseFMSource(value.c_str());
+      engine.voicePool.osc2.fmSource = osc::parseFMSource(value.c_str());
       return;
     }
 
     if (paramName == "osc3.fmSource") {
       std::string value;
       iss >> value;
-      engine.voicePool.osc3.fmSource = parseFMSource(value.c_str());
+      engine.voicePool.osc3.fmSource = osc::parseFMSource(value.c_str());
       return;
     }
 
     if (paramName == "osc4.fmSource") {
       std::string value;
       iss >> value;
-      engine.voicePool.osc4.fmSource = parseFMSource(value.c_str());
+      engine.voicePool.osc4.fmSource = osc::parseFMSource(value.c_str());
       return;
     }
 
     if (paramName == "noise.type") {
       std::string value;
       iss >> value;
-      engine.voicePool.noise.type = parseNoiseType(value.c_str());
+      engine.voicePool.noise.type = noise::parseNoiseType(value.c_str());
       return;
     }
 

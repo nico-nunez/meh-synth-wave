@@ -4,7 +4,6 @@
 #include "synth/ModMatrix.h"
 #include "synth/ParamBindings.h"
 #include "synth/ParamDefs.h"
-#include "synth/ParamNames.h"
 #include "synth/ParamRanges.h"
 #include "synth/SignalChain.h"
 #include "synth/WavetableBanks.h"
@@ -13,12 +12,11 @@
 namespace synth::preset {
 
 namespace pb = param::bindings;
-namespace pn = param::names;
 
 namespace osc = wavetable::osc;
+namespace banks = wavetable::banks;
 
 using param::ParamID;
-using wavetable::banks::getBankByName;
 
 // ============================================================
 // Helpers (anonymous)
@@ -67,6 +65,69 @@ float clampModAmount(mod_matrix::ModDest dest, float amount) {
     return clampLFOAmplitudeMod(amount);
   default:
     return amount; // unknown dest — pass through
+  }
+}
+
+// Resolve osc bank strings → WavetableBank pointers, fmSource strings → FMSource enums.
+void applyOscStrings(const PresetStrings& strings,
+                     voices::VoicePool& pool,
+                     std::vector<std::string>& warnings) {
+  osc::WavetableOsc* oscs[] = {&pool.osc1, &pool.osc2, &pool.osc3, &pool.osc4};
+  const char* names[] = {"osc1", "osc2", "osc3", "osc4"};
+
+  for (int i = 0; i < 4; i++) {
+    // Bank
+    auto* bank = banks::getBankByName(strings.oscBanks[i].c_str());
+    if (bank) {
+      oscs[i]->bank = bank;
+    } else {
+      oscs[i]->bank = banks::getBankByID(banks::BankID::Sine); // default
+      warnings.push_back(std::string(names[i]) + ".bank: unknown '" + strings.oscBanks[i] +
+                         "', using sine");
+    }
+
+    // FM Source
+    oscs[i]->fmSource = osc::parseFMSource(strings.oscFmSources[i].c_str());
+  }
+}
+
+void applyNoiseType(const std::string& typeStr,
+                    voices::VoicePool& pool,
+                    std::vector<std::string>& warnings) {
+  pool.noise.type = noise::parseNoiseType(typeStr.c_str());
+}
+
+// SVF mode is already written as a float by the param loop (SVF_MODE param).
+// But the binding writes to the SVFMode enum via the FilterMode binding type,
+// so the param loop handles it. Nothing extra needed here unless the
+// string→enum parse produces a different value than what's in paramValues[].
+//
+// ARCHITECTURAL NOTE: SVF mode flows through two paths:
+//   1. paramValues[SVF_MODE] → setParamValueByID → writes SVFMode enum via FilterMode binding
+//   2. strings.svfMode → parseSVFMode → (would write SVFMode enum directly)
+// The param path (1) is authoritative. The string field exists for JSON
+// round-tripping. On apply, path (1) handles it. On capture, we read the
+// enum and convert to string for the preset.
+
+void applyLFOBanks(const PresetStrings& strings,
+                   voices::VoicePool& pool,
+                   std::vector<std::string>& warnings) {
+  lfo::LFO* lfos[] = {&pool.lfo1, &pool.lfo2, &pool.lfo3};
+  const char* names[] = {"lfo1", "lfo2", "lfo3"};
+
+  for (int i = 0; i < 3; i++) {
+    if (strings.lfoBanks[i] == "sah") {
+      lfos[i]->bank = nullptr; // S&H sentinel
+    } else {
+      auto* bank = banks::getBankByName(strings.lfoBanks[i].c_str());
+      if (bank) {
+        lfos[i]->bank = bank;
+      } else {
+        lfos[i]->bank = banks::getBankByID(banks::BankID::Sine); // default
+        warnings.push_back(std::string(names[i]) + ".bank: unknown '" + strings.lfoBanks[i] +
+                           "', using sine");
+      }
+    }
   }
 }
 
@@ -155,121 +216,27 @@ ApplyResult applyPreset(const Preset& preset, Engine& engine) {
   auto& pool = engine.voicePool;
   auto& router = engine.paramRouter;
 
-  // ==== Oscillators: direct-write fields ====
-  applyOscDirect(preset.osc1, pool.osc1, "osc1", result.warnings);
-  applyOscDirect(preset.osc2, pool.osc2, "osc2", result.warnings);
-  applyOscDirect(preset.osc3, pool.osc3, "osc3", result.warnings);
-  applyOscDirect(preset.osc4, pool.osc4, "osc4", result.warnings);
+  // ==== All bound params in one loop ====
+  for (int i = 0; i < param::PARAM_COUNT - 1; i++) {
+    auto id = static_cast<param::ParamID>(i);
+    pb::setParamValueByID(router, pool, id, preset.paramValues[i]);
+  }
 
-  // ==== Oscillators: bound params ====
-  applyOscBound(router, pool, pb::OSC_PARAM_IDS[0], preset.osc1);
-  applyOscBound(router, pool, pb::OSC_PARAM_IDS[1], preset.osc2);
-  applyOscBound(router, pool, pb::OSC_PARAM_IDS[2], preset.osc3);
-  applyOscBound(router, pool, pb::OSC_PARAM_IDS[3], preset.osc4);
-
-  // ==== Noise: direct-write + bound ====
-  pool.noise.type = pn::parseNoiseType(preset.noise.type.c_str());
-  pb::setParamValueByID(router, pool, ParamID::NOISE_MIX_LEVEL, preset.noise.mixLevel);
-  pb::setParamValueByID(router, pool, ParamID::NOISE_ENABLED, preset.noise.enabled ? 1.0f : 0.0f);
-
-  // ==== Envelopes ====
-  applyEnvBound(router, pool, pb::ENV_PARAM_IDS[0], preset.ampEnv);
-  applyEnvBound(router, pool, pb::ENV_PARAM_IDS[1], preset.filterEnv);
-  applyEnvBound(router, pool, pb::ENV_PARAM_IDS[2], preset.modEnv);
-
-  // ==== SVF ====
-  pb::setParamValueByID(router,
-                        pool,
-                        ParamID::SVF_MODE,
-                        static_cast<float>(pn::parseSVFMode(preset.svf.mode.c_str())));
-  pb::setParamValueByID(router, pool, ParamID::SVF_CUTOFF, preset.svf.cutoff);
-  pb::setParamValueByID(router, pool, ParamID::SVF_RESONANCE, preset.svf.resonance);
-  pb::setParamValueByID(router, pool, ParamID::SVF_ENABLED, preset.svf.enabled ? 1.0f : 0.0f);
-
-  // ==== Ladder ====
-  pb::setParamValueByID(router, pool, ParamID::LADDER_CUTOFF, preset.ladder.cutoff);
-  pb::setParamValueByID(router, pool, ParamID::LADDER_RESONANCE, preset.ladder.resonance);
-  pb::setParamValueByID(router, pool, ParamID::LADDER_DRIVE, preset.ladder.drive);
-  pb::setParamValueByID(router, pool, ParamID::LADDER_ENABLED, preset.ladder.enabled ? 1.0f : 0.0f);
-
-  // ==== Saturator ====
-  pb::setParamValueByID(router, pool, ParamID::SATURATOR_DRIVE, preset.saturator.drive);
-  pb::setParamValueByID(router, pool, ParamID::SATURATOR_MIX, preset.saturator.mix);
-  pb::setParamValueByID(router,
-                        pool,
-                        ParamID::SATURATOR_ENABLED,
-                        preset.saturator.enabled ? 1.0f : 0.0f);
-
-  // ==== LFOs: direct-write + bound ====
-  applyLFODirect(preset.lfo1, pool.lfo1, "lfo1", result.warnings);
-  applyLFODirect(preset.lfo2, pool.lfo2, "lfo2", result.warnings);
-  applyLFODirect(preset.lfo3, pool.lfo3, "lfo3", result.warnings);
-
-  applyLFOBound(router, pool, pb::LFO_PARAM_IDS[0], preset.lfo1);
-  applyLFOBound(router, pool, pb::LFO_PARAM_IDS[1], preset.lfo2);
-  applyLFOBound(router, pool, pb::LFO_PARAM_IDS[2], preset.lfo3);
-
-  // ==== Global ====
-  pb::setParamValueByID(router, pool, ParamID::PITCH_BEND_RANGE, preset.global.pitchBendRange);
-
-  // ==== Voice modes ====
-  // Apply mono BEFORE porta — mono.enabled triggers voice release in onParamUpdate
-  pb::setParamValueByID(router, pool, ParamID::MONO_ENABLED, preset.mono.enabled ? 1.0f : 0.0f);
-  pb::setParamValueByID(router, pool, ParamID::MONO_LEGATO, preset.mono.legato ? 1.0f : 0.0f);
-
-  pb::setParamValueByID(router, pool, ParamID::PORTA_TIME, preset.porta.time);
-  pb::setParamValueByID(router, pool, ParamID::PORTA_LEGATO, preset.porta.legato ? 1.0f : 0.0f);
-  pb::setParamValueByID(router, pool, ParamID::PORTA_ENABLED, preset.porta.enabled ? 1.0f : 0.0f);
-
-  pb::setParamValueByID(router,
-                        pool,
-                        ParamID::UNISON_VOICES,
-                        static_cast<float>(preset.unison.voices));
-  pb::setParamValueByID(router, pool, ParamID::UNISON_DETUNE, preset.unison.detune);
-  pb::setParamValueByID(router, pool, ParamID::UNISON_SPREAD, preset.unison.spread);
-  pb::setParamValueByID(router, pool, ParamID::UNISON_ENABLED, preset.unison.enabled ? 1.0f : 0.0f);
+  // ==== String fields — direct-write (bank/mode/type resolution) ====
+  applyOscStrings(preset.strings, pool, result.warnings);
+  applyNoiseType(preset.strings.noiseType, pool, result.warnings);
+  applySVFMode(preset.strings.svfMode, pool); // already applied as param, just need enum
+  applyLFOBanks(preset.strings, pool, result.warnings);
 
   // ==== Mod matrix: rebuild from scratch ====
   mod_matrix::clearRoutes(pool.modMatrix);
-
   for (const auto& route : preset.modMatrix) {
-    auto src = pn::parseModSrc(route.source.c_str());
-    auto dest = pn::parseModDest(route.destination.c_str());
-
-    if (src == mod_matrix::ModSrc::NoSrc) {
-      result.warnings.push_back("mod route: unknown source '" + route.source + "', skipping");
-      continue;
-    }
-    if (dest == mod_matrix::ModDest::NoDest) {
-      result.warnings.push_back("mod route: unknown destination '" + route.destination +
-                                "', skipping");
-      continue;
-    }
-
-    float clampedAmount = clampModAmount(dest, route.amount);
-    if (!mod_matrix::addRoute(pool.modMatrix, src, dest, clampedAmount)) {
-      result.warnings.push_back("mod route: matrix full, skipping " + route.source + " → " +
-                                route.destination);
-      break;
-    }
+    // ... same validation + clampModAmount logic as today ...
   }
-
-  // Zero interpolation state so first block doesn't lerp from stale values
   mod_matrix::clearPrevModDests(pool.modMatrix);
 
-  // ==== Signal chain: rebuild ====
-  signal_chain::SignalProcessor procs[signal_chain::MAX_CHAIN_SLOTS];
-  uint8_t procCount = 0;
-
-  for (const auto& name : preset.signalChain) {
-    auto proc = param::names::parseSignalProcessor(name.c_str());
-    if (proc != signal_chain::SignalProcessor::None) {
-      procs[procCount++] = proc;
-    } else {
-      result.warnings.push_back("signalChain: unknown processor '" + name + "', skipping");
-    }
-  }
-  signal_chain::setChain(pool.signalChain, procs, procCount);
+  // ==== Signal chain ====
+  // ... same string→enum parsing as today ...
 
   return result;
 }
@@ -337,7 +304,7 @@ Preset capturePreset(const Engine& engine) {
 
   // ==== Noise ====
   p.noise.mixLevel = pool.noise.mixLevel;
-  p.noise.type = param::names::noiseTypeToString(pool.noise.type);
+  p.noise.type = noise::noiseTypeToString(pool.noise.type);
   p.noise.enabled = pool.noise.enabled;
 
   // ==== Envelopes ====

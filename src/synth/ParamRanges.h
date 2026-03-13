@@ -1,6 +1,7 @@
 #pragma once
 
 #include "synth/Filters.h"
+
 #include <cstdint>
 
 namespace synth::param::ranges {
@@ -61,7 +62,7 @@ float clampSustain(float sustainLevel);
 
 namespace filter {
 inline constexpr int8_t FILTER_MODE_MIN = 0;
-inline constexpr int8_t FILTER_MODE_MAX = static_cast<uint8_t>(filters::SVFMode::MODE_COUNT) - 1;
+inline constexpr int8_t FILTER_MODE_MAX = static_cast<uint8_t>(filters::SVFMode::COUNT) - 1;
 inline constexpr float CUTOFF_MIN = 20.0f;    // Hz
 inline constexpr float CUTOFF_MAX = 20000.0f; // Hz
 inline constexpr float RESONANCE_MIN = 0.0f;
