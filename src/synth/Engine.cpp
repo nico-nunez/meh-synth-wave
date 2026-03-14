@@ -1,11 +1,14 @@
 #include "Engine.h"
-#include "ParamBindings.h"
-#include "Preset.h"
-#include "PresetApply.h"
-#include "VoicePool.h"
+
+#include "synth/ParamBindings.h"
+#include "synth/ParamDefs.h"
+#include "synth/Preset.h"
+#include "synth/PresetApply.h"
+#include "synth/VoicePool.h"
+#include "synth_io/Events.h"
 
 #include "dsp/Buffers.h"
-#include "synth_io/Events.h"
+#include "dsp/Math.h"
 
 #include <algorithm>
 #include <cassert>
@@ -15,6 +18,93 @@
 namespace synth {
 using synth_io::MIDIEvent;
 using synth_io::ParamEvent;
+
+namespace {
+// Handle updates to params with derived values
+void onParamUpdate(Engine& engine, param::ParamID id) {
+  using param::UpdateGroup;
+  namespace pb = param::bindings;
+
+  auto& pool = engine.voicePool;
+
+  switch (getParamDef(id).updateGroup) {
+  case UpdateGroup::OscEnable: {
+    int count = pool.osc1.enabled + pool.osc2.enabled + pool.osc3.enabled + pool.osc4.enabled +
+                pool.noise.enabled;
+    pool.oscMixGain = (count > 0) ? 1.0f / static_cast<float>(count) : 1.0f;
+    break;
+  }
+
+  case UpdateGroup::EnvTime:
+  case UpdateGroup::EnvCurve: {
+    const auto& ampIds = pb::ENV_PARAM_IDS[0];
+    const auto& filterIds = pb::ENV_PARAM_IDS[1];
+
+    envelope::Envelope* env;
+
+    if (id >= ampIds.attack && id <= ampIds.releaseCurve)
+      env = &pool.ampEnv;
+    else if (id >= filterIds.attack && id <= filterIds.releaseCurve)
+      env = &pool.filterEnv;
+    else
+      env = &pool.modEnv;
+
+    if (getParamDef(id).updateGroup == UpdateGroup::EnvTime)
+      envelope::updateIncrements(*env, pool.sampleRate);
+    else
+      envelope::updateCurveTables(*env);
+    break;
+  }
+
+  case UpdateGroup::SVFCoeff:
+    filters::updateSVFCoefficients(pool.svf, pool.invSampleRate);
+    break;
+
+  case UpdateGroup::LadderCoeff:
+    filters::updateLadderCoefficient(pool.ladder, pool.invSampleRate);
+    break;
+
+  case UpdateGroup::SaturatorDerived:
+    pool.saturator.invDrive = saturator::calcInvDrive(pool.saturator.drive);
+    break;
+
+  case UpdateGroup::MonoEnable:
+    if (pool.mono.enabled) {
+      for (uint32_t i = 0; i < pool.activeCount; i++) {
+        uint32_t v = pool.activeIndices[i];
+        envelope::triggerRelease(pool.ampEnv, v);
+        envelope::triggerRelease(pool.filterEnv, v);
+        envelope::triggerRelease(pool.modEnv, v);
+      }
+      pool.mono.voiceIndex = MAX_VOICES;
+      pool.mono.stackDepth = 0;
+    } else {
+      voices::releaseMonoVoice(pool);
+    }
+    break;
+
+  case UpdateGroup::PortaCoeff:
+    pool.porta.coeff = dsp::math::calcPortamento(pool.porta.time, pool.sampleRate);
+    break;
+
+  case UpdateGroup::UnisonDerived:
+    if (pool.unison.enabled) {
+      unison::updateDetuneOffsets(pool.unison);
+      unison::updatePanPositions(pool.unison);
+      unison::updateGainComp(pool.unison);
+    }
+    break;
+
+  case UpdateGroup::UnisonSpread:
+    unison::updatePanPositions(pool.unison);
+    break;
+
+  case UpdateGroup::None:
+    break;
+  }
+}
+
+} // anonymous namespace
 
 Engine createEngine(const EngineConfig& config) {
   Engine engine{};
@@ -33,8 +123,12 @@ Engine createEngine(const EngineConfig& config) {
 }
 
 void Engine::processParamEvent(const ParamEvent& event) {
-  using param::bindings::setParamValueByID;
-  setParamValueByID(paramRouter, voicePool, static_cast<ParamID>(event.id), event.value);
+  using param::bindings::setParamValue;
+
+  auto id = static_cast<param::ParamID>(event.id);
+
+  setParamValue(paramRouter, id, event.value);
+  onParamUpdate(*this, id);
 }
 
 void Engine::processMIDIEvent(const synth_io::MIDIEvent& event) {
@@ -56,12 +150,15 @@ void Engine::processMIDIEvent(const synth_io::MIDIEvent& event) {
     voices::handleNoteOff(voicePool, event.data.noteOff.note);
     break;
 
-  case Type::ControlChange:
-    param::bindings::handleMIDICC(paramRouter,
-                                  voicePool,
-                                  event.data.cc.number,
-                                  event.data.cc.value);
+  case Type::ControlChange: {
+    using param::bindings::handleMIDICC;
+
+    ParamID id = handleMIDICC(paramRouter, voicePool, event.data.cc.number, event.data.cc.value);
+
+    if (id != ParamID::UNKNOWN)
+      onParamUpdate(*this, id);
     break;
+  }
 
   case Type::PitchBend:
     // Normalize value [-8192, 8191] -> [-1.0, 1.0]

@@ -82,7 +82,7 @@ ApplyResult applyPreset(const Preset& preset, Engine& engine) {
   // ==== All bound params in one loop ====
   for (int i = 0; i < param::PARAM_COUNT - 1; i++) {
     auto id = static_cast<param::ParamID>(i);
-    pb::setParamValueByID(router, pool, id, preset.paramValues[i]);
+    pb::setParamValue(router, id, preset.paramValues[i]);
   }
 
   // ==== Enum fields — direct resolution, no string parsing ====

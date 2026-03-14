@@ -106,10 +106,10 @@ using voices::VoicePool;
 // ==== API ====
 void initParamRouter(ParamRouter& router, VoicePool& pool);
 
-void handleMIDICC(ParamRouter& router, VoicePool& pool, uint8_t cc, uint8_t value);
+ParamID handleMIDICC(ParamRouter& router, VoicePool& pool, uint8_t cc, uint8_t value);
 
 float getParamValueByID(const ParamRouter& router, ParamID id);
-void setParamValueByID(ParamRouter& router, VoicePool& pool, ParamID id, float value);
+void setParamValue(ParamRouter& router, ParamID id, float value);
 
 // String parsing helpers
 ParamID getParamIDByName(const char* paramName);

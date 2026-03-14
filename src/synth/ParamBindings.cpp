@@ -12,8 +12,6 @@
 #include "synth/VoicePool.h"
 #include "synth/WavetableOsc.h"
 
-#include "dsp/Math.h"
-
 #include <cmath>
 #include <cstddef>
 #include <cstdio>
@@ -127,85 +125,6 @@ void bindUnison(ParamBinding* bindings, unison::UnisonState& uni) {
   bindings[UNISON_ENABLED] = makeBoolBinding(&uni.enabled);
 }
 
-// Handle updates to params with derived values
-void onParamUpdate(VoicePool& pool, ParamID id) {
-  switch (getParamDef(id).updateGroup) {
-  case UpdateGroup::OscEnable: {
-    int count = pool.osc1.enabled + pool.osc2.enabled + pool.osc3.enabled + pool.osc4.enabled +
-                pool.noise.enabled;
-    pool.oscMixGain = (count > 0) ? 1.0f / static_cast<float>(count) : 1.0f;
-    break;
-  }
-
-  case UpdateGroup::EnvTime:
-  case UpdateGroup::EnvCurve: {
-    const auto& ampIds = ENV_PARAM_IDS[0];
-    const auto& filterIds = ENV_PARAM_IDS[1];
-
-    envelope::Envelope* env;
-
-    if (id >= ampIds.attack && id <= ampIds.releaseCurve)
-      env = &pool.ampEnv;
-    else if (id >= filterIds.attack && id <= filterIds.releaseCurve)
-      env = &pool.filterEnv;
-    else
-      env = &pool.modEnv;
-
-    if (getParamDef(id).updateGroup == UpdateGroup::EnvTime)
-      envelope::updateIncrements(*env, pool.sampleRate);
-    else
-      envelope::updateCurveTables(*env);
-    break;
-  }
-
-  case UpdateGroup::SVFCoeff:
-    filters::updateSVFCoefficients(pool.svf, pool.invSampleRate);
-    break;
-
-  case UpdateGroup::LadderCoeff:
-    filters::updateLadderCoefficient(pool.ladder, pool.invSampleRate);
-    break;
-
-  case UpdateGroup::SaturatorDerived:
-    pool.saturator.invDrive = saturator::calcInvDrive(pool.saturator.drive);
-    break;
-
-  case UpdateGroup::MonoEnable:
-    if (pool.mono.enabled) {
-      for (uint32_t i = 0; i < pool.activeCount; i++) {
-        uint32_t v = pool.activeIndices[i];
-        envelope::triggerRelease(pool.ampEnv, v);
-        envelope::triggerRelease(pool.filterEnv, v);
-        envelope::triggerRelease(pool.modEnv, v);
-      }
-      pool.mono.voiceIndex = MAX_VOICES;
-      pool.mono.stackDepth = 0;
-    } else {
-      voices::releaseMonoVoice(pool);
-    }
-    break;
-
-  case UpdateGroup::PortaCoeff:
-    pool.porta.coeff = dsp::math::calcPortamento(pool.porta.time, pool.sampleRate);
-    break;
-
-  case UpdateGroup::UnisonDerived:
-    if (pool.unison.enabled) {
-      unison::updateDetuneOffsets(pool.unison);
-      unison::updatePanPositions(pool.unison);
-      unison::updateGainComp(pool.unison);
-    }
-    break;
-
-  case UpdateGroup::UnisonSpread:
-    unison::updatePanPositions(pool.unison);
-    break;
-
-  case UpdateGroup::None:
-    break;
-  }
-}
-
 void initMIDIBindings(ParamRouter& router) {
   for (auto& cc : router.midiBindings)
     cc = ParamID::UNKNOWN;
@@ -249,10 +168,10 @@ void initParamRouter(ParamRouter& router, VoicePool& pool) {
   initMIDIBindings(router);
 }
 
-void handleMIDICC(ParamRouter& router, VoicePool& pool, uint8_t cc, uint8_t value) {
+ParamID handleMIDICC(ParamRouter& router, VoicePool& pool, uint8_t cc, uint8_t value) {
   if (cc == 1) {
     pool.modWheelValue = value / 127.0f;
-    return;
+    return ParamID::UNKNOWN;
   }
   if (cc == 64) {
     bool wasHeld = pool.sustain.held;
@@ -282,7 +201,7 @@ void handleMIDICC(ParamRouter& router, VoicePool& pool, uint8_t cc, uint8_t valu
             envelope::triggerRelease(pool.modEnv, v);
           }
         }
-        return;
+        return ParamID::UNKNOWN;
       }
 
       // Poly: release all deferred voices
@@ -295,17 +214,19 @@ void handleMIDICC(ParamRouter& router, VoicePool& pool, uint8_t cc, uint8_t valu
         }
       }
     }
-    return;
+    return ParamID::UNKNOWN;
   }
 
   ParamID paramID = router.midiBindings[cc];
   if (paramID == ParamID::UNKNOWN)
-    return;
+    return paramID;
 
   const auto& def = getParamDef(paramID);
   float denorm = def.min + (value / 127.0f) * (def.max - def.min);
 
-  setParamValueByID(router, pool, paramID, denorm);
+  setParamValue(router, paramID, denorm);
+
+  return paramID;
 }
 
 // ========================
@@ -336,7 +257,7 @@ float getParamValueByID(const ParamRouter& router, ParamID id) {
 
 // Set param value by ID
 // Expects normalized values, denormalizes, and updates value
-void setParamValueByID(ParamRouter& router, VoicePool& pool, ParamID id, float value) {
+void setParamValue(ParamRouter& router, ParamID id, float value) {
   if (id < 0 || id >= PARAM_COUNT)
     return;
 
@@ -359,8 +280,6 @@ void setParamValueByID(ParamRouter& router, VoicePool& pool, ParamID id, float v
     *binding.svfModePtr = static_cast<SVFMode>(static_cast<int>(std::round(value)));
     break;
   }
-
-  onParamUpdate(pool, id);
 }
 
 ParamID getParamIDByName(const char* name) {
