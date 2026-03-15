@@ -41,10 +41,10 @@ A complete reference for crafting presets for the meh-synth-wave synthesizer. Th
 - **Mod sources**: ampEnv, filterEnv, modEnv, lfo1–lfo3, velocity, noise, modWheel, keyTrack
 - **Mod destinations**: filter cutoff/resonance (both filters), oscillator pitch/mix/scanPos/fmDepth (all 4 oscs), LFO rate/amplitude (all 3 LFOs)
 
-### Filtering & Effects
+### Filtering & Signal Processing
 - **SVF (State Variable Filter)**: lowpass, highpass, bandpass, notch modes
 - **Ladder filter**: Moog-style 4-pole lowpass with drive/saturation
-- **Saturator**: soft-clip distortion with drive and wet/dry mix
+- **Saturator**: per-voice soft-clip distortion with drive and wet/dry mix (pre-filter, part of signal chain)
 - **Configurable signal chain**: processors can be reordered (default: SVF → Ladder → Saturator)
 - **Stereo output**: per-voice panning, stereo filter processing (independent L/R state)
 
@@ -65,8 +65,8 @@ A complete reference for crafting presets for the meh-synth-wave synthesizer. Th
 
 Things the synth **cannot** do — useful context for realistic preset design:
 
-- **No effects beyond saturation** — no reverb, delay, chorus, or phaser (planned for step 10)
-- **No tempo sync** — LFO rates are in Hz only, no BPM-synced subdivisions
+- **No post-mix effects** — no reverb, delay, chorus, or phaser yet (effects chain planned for step 10: distortion, chorus, phaser, delay, reverb)
+- **No tempo sync for delay** — delay time sync planned alongside the effects chain
 - **No ring modulation** — oscillators can FM each other but not multiply signals
 - **No hard sync** — oscillator phase reset from another oscillator is not implemented
 - **No sample playback** — wavetable-only; no .wav file loading
@@ -91,6 +91,7 @@ Presets are JSON files with the `.json` extension. Every field must be present (
 ```json
 {
   "version": 1,
+  "bpm": 120.0,
   "metadata": { ... },
   "oscillators": {
     "osc1": { ... },
@@ -101,11 +102,11 @@ Presets are JSON files with the `.json` extension. Every field must be present (
   },
   "envelopes": { "ampEnv": { ... }, "filterEnv": { ... }, "modEnv": { ... } },
   "filters": { "svf": { ... }, "ladder": { ... } },
-  "fx": { "saturator": { ... } },
   "lfos": { "lfo1": { ... }, "lfo2": { ... }, "lfo3": { ... } },
   "modMatrix": [ ... ],
   "signalChain": [ ... ],
   "voice": {
+    "saturator": { ... },
     "pitchBend": { ... },
     "mono": { ... },
     "portamento": { ... },
@@ -116,8 +117,10 @@ Presets are JSON files with the `.json` extension. Every field must be present (
 
 **Key structural notes:**
 - `noise` is nested inside `oscillators`, not at the root
-- `saturator` is nested inside `fx`, not at the root
-- `mono`, `portamento`, `unison`, and `pitchBend` are all nested inside `voice`
+- `saturator` is nested inside `voice` — it is a per-voice, pre-filter processor, not a post-mix effect
+- `mono`, `portamento`, `unison`, `pitchBend`, and `saturator` are all nested inside `voice`
+- `fx` is reserved for the post-mix effects chain (step 10: distortion, chorus, phaser, delay, reverb) — not present in current presets
+- `master.gain` is intentionally absent — it is a session-level control, not a per-preset sound design parameter
 
 ---
 
@@ -144,7 +147,6 @@ Each oscillator (osc1–osc4) has the same fields:
 - `scanPos` only matters for multi-frame banks (currently only `sine_to_saw`). For single-frame banks (sine, saw, square, triangle), `scanPos` has no audible effect.
 - `fmRatio` multiplies the oscillator's frequency. At ratio 2.0, the oscillator runs an octave above its MIDI pitch. This is applied before FM modulation — it determines the carrier or modulator frequency relationship.
 - Mix gain is auto-normalized: `1.0 / enabledOscCount`. If only osc1 is enabled, it gets full level. If all 4 are enabled, each gets 0.25x before the per-voice gain stage.
-- Per-voice gain is fixed at `1/8` (0.125) — this is a system constant, not a preset parameter.
 
 ### Noise
 
@@ -210,13 +212,15 @@ Three envelopes share the same field structure: `ampEnv` (amplitude), `filterEnv
 
 ### Saturator
 
-Saturator is serialized inside the `fx` JSON object.
+Serialized inside the `voice` JSON object. It is a **per-voice, pre-filter** processor — it runs before the SVF and Ladder filters on each individual voice, giving the "drive into the filter" character of classic hardware synths.
 
 | Field | Type | Range | Default | Description |
 |-------|------|-------|---------|-------------|
 | `drive` | float | 1.0 – 5.0 | 1.0 | Distortion intensity (1.0 = clean) |
 | `mix` | float | 0.0 – 1.0 | 1.0 | Wet/dry blend (0.0 = dry, 1.0 = fully saturated) |
 | `enabled` | bool | | false | Whether saturation is active |
+
+**Note:** The saturator's position in the signal chain is configurable — it can be placed before or after the filters by reordering `signalChain`. The default order is `["svf", "ladder", "saturator"]`.
 
 ### LFOs
 
@@ -225,7 +229,9 @@ Three LFOs (lfo1–lfo3) share the same fields:
 | Field | Type | Range | Default | Description |
 |-------|------|-------|---------|-------------|
 | `bank` | string | see [banks](#wavetable-banks) + `"sah"` | `"sine"` | Waveform bank or Sample & Hold |
-| `rate` | float | 0.0 – 20.0 | 1.0 | Frequency in Hz |
+| `rate` | float | 0.0 – 20.0 | 1.0 | Frequency in Hz — used when `tempoSync` is false |
+| `tempoSync` | bool | | false | When true, rate is derived from `bpm` + `subdivision` |
+| `subdivision` | string | see [subdivisions](#subdivisions) | `"1/4"` | Beat fraction used when `tempoSync` is true |
 | `amplitude` | float | 0.0 – 1.0 | 1.0 | Output range: -amplitude to +amplitude |
 | `retrigger` | bool | | false | Reset LFO phase to 0 on first note-on |
 
@@ -235,6 +241,7 @@ Three LFOs (lfo1–lfo3) share the same fields:
 - LFOs output a **bipolar** signal: the range is [-amplitude, +amplitude]. The mod matrix `amount` scales this further.
 - LFO rate and amplitude are themselves modulatable via the mod matrix (LFO-to-LFO modulation is supported with one-sample feedback delay).
 - `retrigger` resets phase on the **first** note-on (when going from 0 active voices to 1), not on every note.
+- When `tempoSync` is true, `rate` is ignored. The effective rate is `bpm / (60.0 * subdivisionBeats)`.
 
 ### Modulation Matrix
 
@@ -285,15 +292,17 @@ Valid processor names: `"svf"`, `"ladder"`, `"saturator"`
 
 ### Voice
 
-All voice behavior fields are grouped under the `"voice"` key in JSON.
+All per-voice behavior fields are grouped under the `"voice"` key in JSON.
+
+#### Saturator
+
+See [Saturator](#saturator) above. Serialized here because it is a per-voice processor.
 
 #### Pitch Bend
 
 | Field | Type | Range | Default | Description |
 |-------|------|-------|---------|-------------|
 | `range` | float | 0.0 – 48.0 | 2.0 | Pitch bend range in semitones (applied symmetrically up/down) |
-
-**Note:** Master gain is intentionally excluded from presets — it's a session-level control.
 
 #### Mono Mode
 
@@ -370,6 +379,28 @@ Same as [wavetable banks](#wavetable-banks), plus:
 |--------|-------------|
 | `"sah"` | Sample & Hold — outputs a new random value at each LFO cycle |
 
+### Subdivisions
+
+Used by LFO `subdivision` (and delay `subdivision` in step 10). Represents a beat fraction where 1.0 beat = one quarter note.
+
+| String | Type | Beats | Description |
+|--------|------|-------|-------------|
+| `"1/1"` | straight | 4.0 | Whole note |
+| `"1/2"` | straight | 2.0 | Half note |
+| `"1/4"` | straight | 1.0 | Quarter note |
+| `"1/8"` | straight | 0.5 | Eighth note |
+| `"1/16"` | straight | 0.25 | Sixteenth note |
+| `"1/32"` | straight | 0.125 | Thirty-second note |
+| `"1/64"` | straight | 0.0625 | Sixty-fourth note |
+| `"d1/2"` | dotted | 3.0 | Dotted half |
+| `"d1/4"` | dotted | 1.5 | Dotted quarter |
+| `"d1/8"` | dotted | 0.75 | Dotted eighth |
+| `"d1/16"` | dotted | 0.375 | Dotted sixteenth |
+| `"1/2t"` | triplet | 4/3 | Half triplet |
+| `"1/4t"` | triplet | 2/3 | Quarter triplet |
+| `"1/8t"` | triplet | 1/3 | Eighth triplet |
+| `"1/16t"` | triplet | 1/6 | Sixteenth triplet |
+
 ### Modulation Sources
 
 | String | Output Range | Per-voice? | Description |
@@ -383,7 +414,7 @@ Same as [wavetable banks](#wavetable-banks), plus:
 | `"velocity"` | 0.0 – 1.0 | yes | MIDI note-on velocity |
 | `"noise"` | -1.0 – 1.0 | no | White noise (global) |
 | `"modWheel"` | 0.0 – 1.0 | no | MIDI CC1 mod wheel (global) |
-| `"keyTrack"` | octaves from A4 | yes | MIDI note position: A4=0, A3=-1, A5=+1 |
+| `"keyTrack"` | 0.0 – 1.0 | yes | Normalized MIDI note: 0.0 at C0, 1.0 at G10 |
 
 **Key tracking amounts:**
 - `amount = 1.0` → full 1:1 tracking (filter cutoff rises/falls at the same rate as pitch)
@@ -432,6 +463,7 @@ A dub techno chord stab with filter envelope sweep and LFO wobble:
 ```json
 {
   "version": 1,
+  "bpm": 120.0,
   "metadata": {
     "name": "Dub Techno Stab",
     "author": "",
@@ -522,14 +554,10 @@ A dub techno chord stab with filter envelope sweep and LFO wobble:
     "ladder": { "cutoff": 1000.0, "resonance": 0.3, "drive": 1.0, "enabled": false }
   },
 
-  "fx": {
-    "saturator": { "drive": 1.5, "mix": 0.4, "enabled": true }
-  },
-
   "lfos": {
-    "lfo1": { "bank": "sine", "rate": 0.3, "amplitude": 1.0, "retrigger": false },
-    "lfo2": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false },
-    "lfo3": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false }
+    "lfo1": { "bank": "sine", "rate": 0.3, "tempoSync": false, "subdivision": "1/4", "amplitude": 1.0, "retrigger": false },
+    "lfo2": { "bank": "sine", "rate": 1.0, "tempoSync": false, "subdivision": "1/4", "amplitude": 1.0, "retrigger": false },
+    "lfo3": { "bank": "sine", "rate": 1.0, "tempoSync": false, "subdivision": "1/4", "amplitude": 1.0, "retrigger": false }
   },
 
   "modMatrix": [
@@ -540,6 +568,7 @@ A dub techno chord stab with filter envelope sweep and LFO wobble:
   "signalChain": ["svf", "ladder", "saturator"],
 
   "voice": {
+    "saturator":  { "drive": 1.5, "mix": 0.4, "enabled": true },
     "pitchBend":  { "range": 2.0 },
     "mono":       { "enabled": false, "legato": true },
     "portamento": { "time": 50.0, "legato": true, "enabled": false },
@@ -553,7 +582,7 @@ A dub techno chord stab with filter envelope sweep and LFO wobble:
 - Fast attack, medium decay, zero sustain → stab character (notes die out even when held)
 - SVF lowpass at 600 Hz with filter envelope sweeping up ~2.5 octaves → bright attack that closes
 - Slow LFO (0.3 Hz) adding gentle cutoff movement for the dub techno wash
-- Light saturation for warmth
+- Light saturation for warmth (per-voice, pre-filter)
 
 ---
 
@@ -564,11 +593,12 @@ The init preset is a clean starting point — one sine oscillator, no filters, n
 ```json
 {
   "version": 1,
+  "bpm": 120.0,
   "metadata": {
     "name": "Init",
     "author": "",
     "category": "Init",
-    "description": "Clean starting point"
+    "description": "Clean starting point — single sine oscillator, no processing"
   },
   "oscillators": {
     "osc1": {
@@ -611,17 +641,15 @@ The init preset is a clean starting point — one sine oscillator, no filters, n
     "svf": { "mode": "lp", "cutoff": 1000.0, "resonance": 0.5, "enabled": false },
     "ladder": { "cutoff": 1000.0, "resonance": 0.3, "drive": 1.0, "enabled": false }
   },
-  "fx": {
-    "saturator": { "drive": 1.0, "mix": 1.0, "enabled": false }
-  },
   "lfos": {
-    "lfo1": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false },
-    "lfo2": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false },
-    "lfo3": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false }
+    "lfo1": { "bank": "sine", "rate": 1.0, "tempoSync": false, "subdivision": "1/4", "amplitude": 1.0, "retrigger": false },
+    "lfo2": { "bank": "sine", "rate": 1.0, "tempoSync": false, "subdivision": "1/4", "amplitude": 1.0, "retrigger": false },
+    "lfo3": { "bank": "sine", "rate": 1.0, "tempoSync": false, "subdivision": "1/4", "amplitude": 1.0, "retrigger": false }
   },
   "modMatrix": [],
   "signalChain": ["svf", "ladder", "saturator"],
   "voice": {
+    "saturator":  { "drive": 1.0, "mix": 1.0, "enabled": false },
     "pitchBend":  { "range": 2.0 },
     "mono":       { "enabled": false, "legato": true },
     "portamento": { "time": 50.0, "legato": true, "enabled": false },

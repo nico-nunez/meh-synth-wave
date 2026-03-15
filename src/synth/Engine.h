@@ -1,7 +1,8 @@
 #pragma once
 
-#include "ParamBindings.h"
-#include "VoicePool.h"
+#include "synth/ParamBindings.h"
+#include "synth/Tempo.h"
+#include "synth/VoicePool.h"
 
 #include "dsp/Buffers.h"
 #include "dsp/Waveforms.h"
@@ -15,6 +16,7 @@ namespace synth {
 using synth_io::MIDIEvent;
 using synth_io::ParamEvent;
 
+using tempo::TempoState;
 using voices::VoicePool;
 
 using dsp::buffers::StereoBuffer;
@@ -30,6 +32,8 @@ struct EngineConfig {
 
 struct Engine {
   uint32_t numFrames = synth_io::DEFAULT_FRAMES;
+
+  TempoState tempo;
 
   VoicePool voicePool;
 

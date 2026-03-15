@@ -1,10 +1,12 @@
 #pragma once
 
 #include "synth/ModMatrix.h"
+#include "synth/Tempo.h"
 #include "synth/WavetableBanks.h"
 
 namespace synth::lfo {
 using mod_matrix::ModDest;
+using tempo::Subdivision;
 using wavetable::banks::WavetableBank;
 
 struct LFO {
@@ -14,6 +16,11 @@ struct LFO {
   float amplitude = 1.0f;              // output range [-amplitude, +amplitude]
   float shHeld = 0.0f;                 // S&H: last held random value
   bool retrigger = false;              // reset phase on note-on?
+
+  // Tempo Sync
+  bool tempoSync = false;
+  Subdivision subdivision = Subdivision::Quarter;
+  float effectiveRate = 1.0f; // precomputed; hot path reads this
 };
 
 struct LFOModState {

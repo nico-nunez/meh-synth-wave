@@ -47,13 +47,11 @@
     "svf": { "mode": "lp", "cutoff": 300.0, "resonance": 0.8, "enabled": true },
     "ladder": { "cutoff": 1000.0, "resonance": 0.3, "drive": 1.0, "enabled": false }
   },
-  "fx": {
-    "saturator": { "drive": 1.8, "mix": 0.6, "enabled": true }
-  },
+  "bpm": 120.0,
   "lfos": {
-    "lfo1": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false },
-    "lfo2": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false },
-    "lfo3": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false }
+    "lfo1": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false, "tempoSync": false, "subdivision": "1/4" },
+    "lfo2": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false, "tempoSync": false, "subdivision": "1/4" },
+    "lfo3": { "bank": "sine", "rate": 1.0, "amplitude": 1.0, "retrigger": false, "tempoSync": false, "subdivision": "1/4" }
   },
   "modMatrix": [
     { "source": "filterEnv", "destination": "svf.cutoff", "amount": 3.5 },
@@ -61,9 +59,10 @@
   ],
   "signalChain": ["svf", "ladder", "saturator"],
   "voice": {
+    "saturator": { "drive": 1.8, "mix": 0.6, "enabled": true },
     "mono": { "enabled": true, "legato": true },
     "portamento": { "time": 25.0, "legato": true, "enabled": true },
     "unison": { "voices": 4, "detune": 20.0, "spread": 0.5, "enabled": false },
-    "pitchBend": { "range": 2.0}
+    "pitchBend": { "range": 2.0 }
   }
 }

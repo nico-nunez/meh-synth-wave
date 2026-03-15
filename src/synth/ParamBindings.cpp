@@ -7,6 +7,7 @@
 #include "synth/Noise.h"
 #include "synth/ParamDefs.h"
 #include "synth/Saturator.h"
+#include "synth/Tempo.h"
 #include "synth/Types.h"
 #include "synth/Unison.h"
 #include "synth/VoicePool.h"
@@ -92,6 +93,7 @@ void bindLFO(ParamBinding* bindings, LFOParamIDs ids, lfo::LFO& lfo) {
   bindings[ids.rate] = makeFloatBinding(&lfo.rate);
   bindings[ids.amplitude] = makeFloatBinding(&lfo.amplitude);
   bindings[ids.retrigger] = makeBoolBinding(&lfo.retrigger);
+  bindings[ids.tempoSync] = makeBoolBinding(&lfo.tempoSync);
 }
 
 // Envelope Bindings
@@ -138,8 +140,7 @@ void initMIDIBindings(ParamRouter& router) {
 
 // ==== APIs ====
 
-void initParamRouter(ParamRouter& router, VoicePool& pool) {
-  // IMPORTANT: ParamID enum layouts must match!
+void initParamRouter(ParamRouter& router, voices::VoicePool& pool, tempo::TempoState& tempo) {
 
   bindOscillator(router.paramBindings, OSC_PARAM_IDS[0], pool.osc1);
   bindOscillator(router.paramBindings, OSC_PARAM_IDS[1], pool.osc2);
@@ -164,6 +165,7 @@ void initParamRouter(ParamRouter& router, VoicePool& pool) {
 
   router.paramBindings[PITCH_BEND_RANGE] = makeFloatBinding(&pool.pitchBend.range);
   router.paramBindings[MASTER_GAIN] = makeFloatBinding(&pool.masterGain);
+  router.paramBindings[BPM] = makeFloatBinding(&tempo.bpm);
 
   initMIDIBindings(router);
 }

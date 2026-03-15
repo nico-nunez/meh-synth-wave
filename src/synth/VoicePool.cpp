@@ -382,9 +382,9 @@ void preProcessBlock(VoicePool& pool, size_t numSamples) {
 
 // Process LFOs (once per sample - global)
 void processLFOs(VoicePool& pool) {
-  float effectiveRate1 = pool.lfo1.rate + pool.modMatrix.destValues[ModDest::LFO1Rate][0];
-  float effectiveRate2 = pool.lfo2.rate + pool.modMatrix.destValues[ModDest::LFO2Rate][0];
-  float effectiveRate3 = pool.lfo3.rate + pool.modMatrix.destValues[ModDest::LFO3Rate][0];
+  float effectiveRate1 = pool.lfo1.effectiveRate + pool.modMatrix.destValues[ModDest::LFO1Rate][0];
+  float effectiveRate2 = pool.lfo2.effectiveRate + pool.modMatrix.destValues[ModDest::LFO2Rate][0];
+  float effectiveRate3 = pool.lfo3.effectiveRate + pool.modMatrix.destValues[ModDest::LFO3Rate][0];
 
   float effectiveAmp1 = pool.lfo1.amplitude + pool.modMatrix.destValues[ModDest::LFO1Amplitude][0];
   float effectiveAmp2 = pool.lfo2.amplitude + pool.modMatrix.destValues[ModDest::LFO2Amplitude][0];

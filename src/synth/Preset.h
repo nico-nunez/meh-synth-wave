@@ -6,6 +6,7 @@
 #include "synth/Noise.h"
 #include "synth/ParamDefs.h"
 #include "synth/SignalChain.h"
+#include "synth/Tempo.h"
 #include "synth/WavetableBanks.h"
 #include "synth/WavetableOsc.h"
 
@@ -16,6 +17,7 @@ namespace synth::preset {
 using filters::SVFMode;
 using noise::NoiseType;
 using signal_chain::SignalProcessor;
+using tempo::Subdivision;
 using wavetable::banks::BankID;
 using wavetable::osc::FMSource;
 
@@ -63,7 +65,10 @@ struct Preset {
   NoiseType noiseType = NoiseType::White;
   SVFMode svfMode = SVFMode::LP;
   BankID lfoBanks[NUM_LFOS] = {}; // BankID(0) = Sine
-
+  Subdivision lfoSubdivisions[NUM_LFOS] = {Subdivision::Quarter,
+                                           Subdivision::Quarter,
+                                           Subdivision::Quarter};
+  Subdivision delaySubdivision = Subdivision::Quarter;
   // Non-param subsystems
   ModRoutePreset modMatrix[mod_matrix::MAX_MOD_ROUTES]{};
   uint8_t modMatrixCount = 0;

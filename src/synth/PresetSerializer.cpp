@@ -1,7 +1,9 @@
 #include "PresetSerializer.h"
 
 #include "synth/ModMatrix.h"
+#include "synth/ParamDefs.h"
 #include "synth/Preset.h"
+#include "synth/Tempo.h"
 
 #include "json/Json.h"
 #include <cstdint>
@@ -38,7 +40,7 @@ constexpr JsonGroup JSON_GROUPS[] = {
     {"modEnv.", "envelopes", "modEnv"},
     {"svf.", "filters", "svf"},
     {"ladder.", "filters", "ladder"},
-    {"saturator.", "fx", "saturator"},
+    {"saturator.", "voice", "saturator"},
     {"lfo1.", "lfos", LFO_KEYS[0]},
     {"lfo2.", "lfos", LFO_KEYS[1]},
     {"lfo3.", "lfos", LFO_KEYS[2]},
@@ -46,7 +48,6 @@ constexpr JsonGroup JSON_GROUPS[] = {
     {"mono.", "voice", "mono"},
     {"porta.", "voice", "portamento"},
     {"unison.", "voice", "unison"},
-    {"master.", nullptr, "master"},
 };
 
 const JsonGroup* findGroupForParam(const char* paramName) {
@@ -160,6 +161,8 @@ std::string serializePreset(const Preset& p) {
     root.set("metadata", std::move(meta));
   }
 
+  root.set("bpm", JsonValue::number(p.paramValues[param::BPM]));
+
   // All numeric (X-macro) params
   for (int i = 0; i < param::PARAM_COUNT - 1; i++) {
     const auto& def = param::PARAM_DEFS[i];
@@ -210,6 +213,12 @@ std::string serializePreset(const Preset& p) {
     root.getOrCreate("lfos")
         .getOrCreate(LFO_KEYS[i])
         .set("bank", JsonValue::string(banks::bankIDToString(p.lfoBanks[i])));
+  }
+
+  for (int i = 0; i < NUM_LFOS; i++) {
+    root.getOrCreate("lfos")
+        .getOrCreate(LFO_KEYS[i])
+        .set("subdivision", JsonValue::string(tempo::subdivisionToString(p.lfoSubdivisions[i])));
   }
 
   // Mod matrix: create array of mappings
@@ -283,6 +292,12 @@ DeserializeResult deserializePreset(const std::string& jsonStr) {
       if (meta.has("description"))
         p.metadata.description = meta["description"].asString();
     }
+  }
+
+  if (root.has("bpm")) {
+    auto& def = param::PARAM_DEFS[param::ParamID::BPM];
+    p.paramValues[param::BPM] =
+        clampWarnFloat(root["bpm"].asFloat(), def.min, def.max, "bpm", result.warnings);
   }
 
   // All numeric (X-macro) params
@@ -385,16 +400,29 @@ DeserializeResult deserializePreset(const std::string& jsonStr) {
     for (int i = 0; i < NUM_LFOS; i++) {
       const auto& lfoObj = root["lfos"][LFO_KEYS[i]];
 
-      if (!lfoObj.isObject() || !lfoObj.has("bank"))
+      if (!lfoObj.isObject())
         continue;
 
-      auto id = banks::parseBankID(lfoObj["bank"].asString().c_str());
-      if (id == BankID::Unknown) {
-        result.warnings.push_back(std::string(LFO_KEYS[i]) + ".bank: unknown, using sine");
-        id = BankID::Sine;
+      if (lfoObj.has("bank")) {
+        auto id = banks::parseBankID(lfoObj["bank"].asString().c_str());
+
+        if (id == BankID::Unknown) {
+          result.warnings.push_back(std::string(LFO_KEYS[i]) + ".bank: unknown, using sine");
+          id = BankID::Sine;
+        }
+
+        p.lfoBanks[i] = id;
       }
 
-      p.lfoBanks[i] = id;
+      if (lfoObj.has("subdivision")) {
+        auto sub = tempo::parseSubdivision(lfoObj["subdivision"].asString().c_str());
+
+        if (std::strcmp(lfoObj["subdivision"].asString().c_str(),
+                        tempo::subdivisionToString(sub)) != 0)
+          result.warnings.push_back(std::string(LFO_KEYS[i]) + ".subdivision: unknown, using 1/4");
+
+        p.lfoSubdivisions[i] = sub;
+      }
     }
   }
 

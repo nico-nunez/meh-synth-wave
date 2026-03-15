@@ -2,6 +2,7 @@
 
 #include "synth/Filters.h"
 #include "synth/ParamDefs.h"
+#include "synth/Tempo.h"
 #include "synth/VoicePool.h"
 
 #include <cstddef>
@@ -33,7 +34,7 @@ struct EnvParamIDs {
 };
 
 struct LFOParamIDs {
-  ParamID rate, amplitude, retrigger;
+  ParamID rate, amplitude, retrigger, tempoSync;
 };
 
 // One bundle per instance, order matches the ParamID enum layout.
@@ -96,17 +97,14 @@ inline constexpr EnvParamIDs ENV_PARAM_IDS[3] = {
 };
 
 inline constexpr LFOParamIDs LFO_PARAM_IDS[3] = {
-    {LFO1_RATE, LFO1_AMPLITUDE, LFO1_RETRIGGER},
-    {LFO2_RATE, LFO2_AMPLITUDE, LFO2_RETRIGGER},
-    {LFO3_RATE, LFO3_AMPLITUDE, LFO3_RETRIGGER},
+    {LFO1_RATE, LFO1_AMPLITUDE, LFO1_RETRIGGER, LFO1_TEMPO_SYNC},
+    {LFO2_RATE, LFO2_AMPLITUDE, LFO2_RETRIGGER, LFO2_TEMPO_SYNC},
+    {LFO3_RATE, LFO3_AMPLITUDE, LFO3_RETRIGGER, LFO3_TEMPO_SYNC},
 };
 
-using voices::VoicePool;
-
 // ==== API ====
-void initParamRouter(ParamRouter& router, VoicePool& pool);
-
-ParamID handleMIDICC(ParamRouter& router, VoicePool& pool, uint8_t cc, uint8_t value);
+void initParamRouter(ParamRouter& router, voices::VoicePool& pool, tempo::TempoState& tempo);
+ParamID handleMIDICC(ParamRouter& router, voices::VoicePool& pool, uint8_t cc, uint8_t value);
 
 float getParamValueByID(const ParamRouter& router, ParamID id);
 void setParamValue(ParamRouter& router, ParamID id, float value);

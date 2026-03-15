@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace synth::param {
 // X(enumId,           name,               type,       min,     max,      default, updateGroup)
 #define PARAM_LIST                                                                                 \
   /* ==== Oscillators ==== */                                                                      \
@@ -113,21 +112,38 @@ namespace synth::param {
   X(UNISON_SPREAD, "unison.spread", Float, 0.0f, 1.0f, 0.5f, UnisonSpread)                         \
   X(UNISON_ENABLED, "unison.enabled", Bool, 0.0f, 1.0f, 0.0f, UnisonDerived)                       \
                                                                                                    \
-  X(MASTER_GAIN, "master.gain", Float, 0.0f, 2.0f, 1.0f, None)
+  X(MASTER_GAIN, "master.gain", Float, 0.0f, 2.0f, 1.0f, None)                                     \
+                                                                                                   \
+  /* ==== Tempo ==== */                                                                            \
+  X(BPM, "bpm", Float, 20.0f, 300.0f, 120.0f, BPMSync)                                             \
+                                                                                                   \
+  X(LFO1_TEMPO_SYNC, "lfo1.tempoSync", Bool, 0.0f, 1.0f, 0.0f, LFOTempoSync)                       \
+  X(LFO2_TEMPO_SYNC, "lfo2.tempoSync", Bool, 0.0f, 1.0f, 0.0f, LFOTempoSync)                       \
+  X(LFO3_TEMPO_SYNC, "lfo3.tempoSync", Bool, 0.0f, 1.0f, 0.0f, LFOTempoSync)
 
+namespace synth::param {
 // What kind of side effect does changing this param trigger?
 enum class UpdateGroup : uint8_t {
   None = 0,
   OscEnable,        // recalc oscMixGain
+                    //
   EnvTime,          // recalc envelope increments (needs sampleRate)
   EnvCurve,         // recalc curve lookup tables
+                    //
   SVFCoeff,         // recalc SVF coefficients
   LadderCoeff,      // recalc Ladder coefficients
+                    //
   SaturatorDerived, // recalc invDrive
-  MonoEnable,       // kill poly voices or release mono
-  PortaCoeff,       // recalc portamento coefficient
-  UnisonDerived,    // recalc detune offsets, pan, gain comp
-  UnisonSpread,     // recalc pan positions only
+
+  MonoEnable,    // kill poly voices or release mono
+  PortaCoeff,    // recalc portamento coefficient
+  UnisonDerived, // recalc detune offsets, pan, gain comp
+  UnisonSpread,  // recalc pan positions only
+
+  BPMSync,      // BPM changed — recalc all synced components
+  LFOTempoSync, // lfo.tempoSync or lfo.subdivision changed
+  LFORate,      // lfo.rate changed — update effectiveRate when !tempoSync
+  DelayTime,    // delay.time, delay.subdivision, or delay.tempoSync changed
 };
 
 enum class ParamType : uint8_t {

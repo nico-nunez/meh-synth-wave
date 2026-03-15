@@ -4,6 +4,7 @@
 #include "synth/ParamDefs.h"
 #include "synth/Preset.h"
 #include "synth/PresetApply.h"
+#include "synth/Tempo.h"
 #include "synth/VoicePool.h"
 #include "synth_io/Events.h"
 
@@ -24,6 +25,7 @@ namespace {
 void onParamUpdate(Engine& engine, param::ParamID id) {
   using param::UpdateGroup;
   namespace pb = param::bindings;
+  namespace env = envelope;
 
   auto& pool = engine.voicePool;
 
@@ -40,7 +42,7 @@ void onParamUpdate(Engine& engine, param::ParamID id) {
     const auto& ampIds = pb::ENV_PARAM_IDS[0];
     const auto& filterIds = pb::ENV_PARAM_IDS[1];
 
-    envelope::Envelope* env;
+    env::Envelope* env;
 
     if (id >= ampIds.attack && id <= ampIds.releaseCurve)
       env = &pool.ampEnv;
@@ -50,9 +52,9 @@ void onParamUpdate(Engine& engine, param::ParamID id) {
       env = &pool.modEnv;
 
     if (getParamDef(id).updateGroup == UpdateGroup::EnvTime)
-      envelope::updateIncrements(*env, pool.sampleRate);
+      env::updateIncrements(*env, pool.sampleRate);
     else
-      envelope::updateCurveTables(*env);
+      env::updateCurveTables(*env);
     break;
   }
 
@@ -72,9 +74,9 @@ void onParamUpdate(Engine& engine, param::ParamID id) {
     if (pool.mono.enabled) {
       for (uint32_t i = 0; i < pool.activeCount; i++) {
         uint32_t v = pool.activeIndices[i];
-        envelope::triggerRelease(pool.ampEnv, v);
-        envelope::triggerRelease(pool.filterEnv, v);
-        envelope::triggerRelease(pool.modEnv, v);
+        env::triggerRelease(pool.ampEnv, v);
+        env::triggerRelease(pool.filterEnv, v);
+        env::triggerRelease(pool.modEnv, v);
       }
       pool.mono.voiceIndex = MAX_VOICES;
       pool.mono.stackDepth = 0;
@@ -99,6 +101,49 @@ void onParamUpdate(Engine& engine, param::ParamID id) {
     unison::updatePanPositions(pool.unison);
     break;
 
+  case UpdateGroup::BPMSync: {
+    float bpm = engine.tempo.bpm;
+    // Recalc each LFO only if it's synced
+    for (lfo::LFO* lfo : {&pool.lfo1, &pool.lfo2, &pool.lfo3}) {
+      if (lfo->tempoSync)
+        lfo->effectiveRate = tempo::calcEffectiveRate(lfo->subdivision, bpm);
+    }
+    // // Recalc delay only if it's synced
+    // if (fx.delay.tempoSync)
+    //   fx.delay.delaySamples = static_cast<uint32_t>(
+    //       tempo::subdivisionPeriodSeconds(fx.delay.subdivision, bpm) * fx.sampleRate);
+    break;
+  }
+
+  case UpdateGroup::LFOTempoSync: {
+    lfo::LFO& lfo = (id == param::LFO1_TEMPO_SYNC)   ? pool.lfo1
+                    : (id == param::LFO2_TEMPO_SYNC) ? pool.lfo2
+                                                     : pool.lfo3;
+    lfo.effectiveRate =
+        lfo.tempoSync ? tempo::calcEffectiveRate(lfo.subdivision, engine.tempo.bpm) : lfo.rate;
+    break;
+  }
+
+  case UpdateGroup::LFORate: {
+    // Only updates effectiveRate when !tempoSync — synced LFOs ignore lfo.rate entirely
+    lfo::LFO& lfo = (id == param::LFO1_RATE)   ? pool.lfo1
+                    : (id == param::LFO2_RATE) ? pool.lfo2
+                                               : pool.lfo3;
+    if (!lfo.tempoSync)
+      lfo.effectiveRate = lfo.rate;
+    break;
+  }
+
+  case UpdateGroup::DelayTime: {
+    //  auto& d = engine.effectsChain.delay;
+    //  d.delaySamples = d.tempoSync
+    //                       ? static_cast<uint32_t>(
+    //                             tempo::subdivisionPeriodSeconds(d.subdivision, engine.tempo.bpm) *
+    //                             engine.effectsChain.sampleRate)
+    //                       : static_cast<uint32_t>(d.time * engine.effectsChain.sampleRate);
+    break;
+  }
+
   case UpdateGroup::None:
     break;
   }
@@ -114,7 +159,7 @@ Engine createEngine(const EngineConfig& config) {
 
   voices::initVoicePool(engine.voicePool, config.sampleRate);
 
-  param::bindings::initParamRouter(engine.paramRouter, engine.voicePool);
+  param::bindings::initParamRouter(engine.paramRouter, engine.voicePool, engine.tempo);
 
   auto initPreset = preset::createInitPreset();
   preset::applyPreset(initPreset, engine);
