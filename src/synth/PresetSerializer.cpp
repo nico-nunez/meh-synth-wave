@@ -173,6 +173,9 @@ std::string serializePreset(const Preset& p) {
 
   // All numeric (X-macro) params
   for (int i = 0; i < param::PARAM_COUNT - 1; i++) {
+    if (i == param::ParamID::BPM || i == param::ParamID::MASTER_GAIN)
+      continue;
+
     const auto& def = param::PARAM_DEFS[i];
     float value = p.paramValues[i];
 
@@ -330,6 +333,9 @@ DeserializeResult deserializePreset(const std::string& jsonStr) {
 
   // All numeric (X-macro) params
   for (int i = 0; i < param::PARAM_COUNT - 1; i++) {
+    if (i == param::ParamID::BPM || i == param::ParamID::MASTER_GAIN)
+      continue;
+
     const auto& def = param::PARAM_DEFS[i];
 
     const JsonGroup* group = findGroupForParam(def.name);
