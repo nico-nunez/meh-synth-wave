@@ -61,6 +61,14 @@
     { "source": "lfo1",      "destination": "osc2.pitch",  "amount": 1.0 }
   ],
   "signalChain": ["svf", "ladder", "saturator"],
+  "fxChain": ["distortion", "chorus", "phaser", "delay", "reverb"],
+  "fx": {
+    "distortion": { "drive": 1.0, "mix": 1.0, "type": "soft", "enabled": false },
+    "chorus":     { "rate": 0.4, "depth": 0.25, "mix": 0.18, "feedback": 0.0, "enabled": true },
+    "phaser":     { "stages": 4, "rate": 0.5, "depth": 1.0, "feedback": 0.5, "mix": 0.5, "enabled": false },
+    "delay":      { "time": 0.5, "tempoSync": true, "subdivision": "1/8t", "feedback": 0.35, "damping": 0.35, "hpDamping": 0.0, "pingPong": true, "mix": 0.18, "enabled": true },
+    "reverb":     { "preDelay": 8.0, "decay": 1.8, "damping": 0.4, "lowDamping": 0.3, "diffusion": 0.78, "bandwidth": 0.82, "modRate": 0.4, "modDepth": 0.2, "mix": 0.18, "enabled": true }
+  },
   "voice": {
     "saturator": { "drive": 1.0, "mix": 1.0, "enabled": false },
     "mono": { "enabled": true, "legato": true },

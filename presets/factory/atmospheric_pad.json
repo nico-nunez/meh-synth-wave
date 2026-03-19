@@ -60,6 +60,14 @@
     { "source": "lfo2", "destination": "svf.cutoff", "amount": 0.3 }
   ],
   "signalChain": ["svf", "ladder", "saturator"],
+  "fxChain": ["distortion", "chorus", "phaser", "delay", "reverb"],
+  "fx": {
+    "distortion": { "drive": 1.0, "mix": 1.0, "type": "soft", "enabled": false },
+    "chorus":     { "rate": 0.2, "depth": 0.3, "mix": 0.18, "feedback": 0.0, "enabled": true },
+    "phaser":     { "stages": 6, "rate": 0.1, "depth": 0.7, "feedback": 0.35, "mix": 0.25, "enabled": true },
+    "delay":      { "time": 0.5, "tempoSync": true, "subdivision": "1/4", "feedback": 0.4, "damping": 0.0, "hpDamping": 0.0, "pingPong": false, "mix": 0.5, "enabled": false },
+    "reverb":     { "preDelay": 20.0, "decay": 7.0, "damping": 0.35, "lowDamping": 0.15, "diffusion": 0.88, "bandwidth": 0.8, "modRate": 0.25, "modDepth": 0.4, "mix": 0.35, "enabled": true }
+  },
   "voice": {
     "saturator": { "drive": 1.0, "mix": 1.0, "enabled": false },
     "mono": { "enabled": false, "legato": true },

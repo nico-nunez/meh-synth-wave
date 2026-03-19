@@ -58,6 +58,14 @@
     { "source": "keyTrack",  "destination": "svf.cutoff", "amount": 1.0 }
   ],
   "signalChain": ["svf", "ladder", "saturator"],
+  "fxChain": ["distortion", "chorus", "phaser", "delay", "reverb"],
+  "fx": {
+    "distortion": { "drive": 2.5, "mix": 0.25, "type": "soft", "enabled": true },
+    "chorus":     { "rate": 1.0, "depth": 0.5, "mix": 0.5, "feedback": 0.0, "enabled": false },
+    "phaser":     { "stages": 4, "rate": 0.5, "depth": 1.0, "feedback": 0.5, "mix": 0.5, "enabled": false },
+    "delay":      { "time": 0.5, "tempoSync": true, "subdivision": "1/16", "feedback": 0.25, "damping": 0.6, "hpDamping": 0.0, "pingPong": false, "mix": 0.15, "enabled": true },
+    "reverb":     { "preDelay": 0.0, "decay": 4.0, "damping": 0.5, "lowDamping": 0.5, "diffusion": 0.75, "bandwidth": 0.75, "modRate": 0.5, "modDepth": 0.5, "mix": 0.3, "enabled": false }
+  },
   "voice": {
     "saturator": { "drive": 1.8, "mix": 0.6, "enabled": true },
     "mono": { "enabled": true, "legato": true },

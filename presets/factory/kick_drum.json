@@ -57,6 +57,14 @@
     { "source": "modEnv", "destination": "osc1.pitch", "amount": 24.0 }
   ],
   "signalChain": ["svf", "ladder", "saturator"],
+  "fxChain": ["distortion", "chorus", "phaser", "delay", "reverb"],
+  "fx": {
+    "distortion": { "drive": 4.0, "mix": 0.4, "type": "hard", "enabled": true },
+    "chorus":     { "rate": 1.0, "depth": 0.5, "mix": 0.5, "feedback": 0.0, "enabled": false },
+    "phaser":     { "stages": 4, "rate": 0.5, "depth": 1.0, "feedback": 0.5, "mix": 0.5, "enabled": false },
+    "delay":      { "time": 0.5, "tempoSync": true, "subdivision": "1/4", "feedback": 0.4, "damping": 0.0, "hpDamping": 0.0, "pingPong": false, "mix": 0.5, "enabled": false },
+    "reverb":     { "preDelay": 0.0, "decay": 0.4, "damping": 0.5, "lowDamping": 0.3, "diffusion": 0.75, "bandwidth": 0.75, "modRate": 0.5, "modDepth": 0.5, "mix": 0.08, "enabled": false }
+  },
   "voice": {
     "saturator":  { "drive": 2.8, "mix": 0.7, "enabled": true },
     "pitchBend":  { "range": 2.0 },

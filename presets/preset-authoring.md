@@ -15,6 +15,7 @@ A complete reference for crafting presets for the meh-synth-wave synthesizer. Th
   - [LFOs](#lfos)
   - [Modulation Matrix](#modulation-matrix)
   - [Signal Chain](#signal-chain)
+  - [FX Chain](#fx-chain)
   - [Voice](#voice)
 - [String Value Reference](#string-value-reference)
 - [Annotated Example Preset](#annotated-example-preset)
@@ -48,6 +49,12 @@ A complete reference for crafting presets for the meh-synth-wave synthesizer. Th
 - **Configurable signal chain**: processors can be reordered (default: SVF → Ladder → Saturator)
 - **Stereo output**: per-voice panning, stereo filter processing (independent L/R state)
 
+### Effects
+- **5 post-mix stereo effects**: distortion, chorus, phaser, delay, reverb
+- **Configurable FX chain**: effects can be reordered by the user (default: distortion → chorus)
+- **Delay**: tempo-sync or free-running, ping-pong, LP/HP damping in feedback path
+- **Reverb**: Dattorro plate algorithm with pre-delay, diffusion, modulation, and damping controls
+
 ### Voice Architecture
 - **64-voice polyphony** (pool-based allocation)
 - **Mono mode**: single-voice with last-note priority, legato or hard retrigger
@@ -65,8 +72,6 @@ A complete reference for crafting presets for the meh-synth-wave synthesizer. Th
 
 Things the synth **cannot** do — useful context for realistic preset design:
 
-- **No post-mix effects** — no reverb, delay, chorus, or phaser yet (effects chain planned for step 10: distortion, chorus, phaser, delay, reverb)
-- **No tempo sync for delay** — delay time sync planned alongside the effects chain
 - **No ring modulation** — oscillators can FM each other but not multiply signals
 - **No hard sync** — oscillator phase reset from another oscillator is not implemented
 - **No sample playback** — wavetable-only; no .wav file loading
@@ -105,6 +110,14 @@ Presets are JSON files with the `.json` extension. Every field must be present (
   "lfos": { "lfo1": { ... }, "lfo2": { ... }, "lfo3": { ... } },
   "modMatrix": [ ... ],
   "signalChain": [ ... ],
+  "fxChain": [ ... ],
+  "fx": {
+    "distortion": { ... },
+    "chorus": { ... },
+    "phaser": { ... },
+    "delay": { ... },
+    "reverb": { ... }
+  },
   "voice": {
     "saturator": { ... },
     "pitchBend": { ... },
@@ -119,7 +132,8 @@ Presets are JSON files with the `.json` extension. Every field must be present (
 - `noise` is nested inside `oscillators`, not at the root
 - `saturator` is nested inside `voice` — it is a per-voice, pre-filter processor, not a post-mix effect
 - `mono`, `portamento`, `unison`, `pitchBend`, and `saturator` are all nested inside `voice`
-- `fx` is reserved for the post-mix effects chain (step 10: distortion, chorus, phaser, delay, reverb) — not present in current presets
+- `fxChain` is a top-level ordering array (like `signalChain`) — it controls the processing order of the effects
+- `fx` holds the parameter objects for each effect; an effect's parameters are applied regardless of whether it appears in `fxChain`
 - `master.gain` is intentionally absent — it is a session-level control, not a per-preset sound design parameter
 
 ---
@@ -277,7 +291,7 @@ The `modMatrix` is an array of route objects. Maximum 16 routes.
 
 ### Signal Chain
 
-The `signalChain` array defines the order of audio processors. Each voice's oscillator output passes through these in sequence.
+The `signalChain` array defines the order of **per-voice** audio processors. Each voice's oscillator output passes through these in sequence before being mixed to the stereo bus.
 
 ```json
 "signalChain": ["svf", "ladder", "saturator"]
@@ -289,6 +303,112 @@ Valid processor names: `"svf"`, `"ladder"`, `"saturator"`
 - Processors can be reordered (e.g., `["saturator", "svf"]` for pre-filter distortion)
 - A processor in the chain but with `enabled: false` is skipped
 - Duplicate entries are allowed (e.g., two saturator stages)
+
+### FX Chain
+
+The `fxChain` array defines the order of **post-mix** stereo effects. After all voices are mixed to the stereo bus, the signal passes through the active effects in this sequence.
+
+```json
+"fxChain": ["distortion", "chorus", "phaser", "delay", "reverb"]
+```
+
+Valid processor names: `"distortion"`, `"chorus"`, `"phaser"`, `"delay"`, `"reverb"`
+
+- Maximum 8 slots
+- Effects can be reordered (e.g., `["reverb", "delay"]` for a pre-verb wash)
+- An effect in the chain but with `enabled: false` is skipped
+- The parameters for each effect live under `fx.<name>` regardless of chain position
+
+**`signalChain` vs `fxChain`:**
+- `signalChain` = per-voice, pre-mix, inside the voice render loop
+- `fxChain` = global stereo, post-mix, applied once to the combined output
+
+#### Distortion
+
+| Field | Type | Range | Default | Description |
+|-------|------|-------|---------|-------------|
+| `drive` | float | 1.0 – 10.0 | 1.0 | Distortion intensity (1.0 = clean) |
+| `mix` | float | 0.0 – 1.0 | 1.0 | Wet/dry blend |
+| `type` | string | `"soft"`, `"hard"` | `"soft"` | Clipping algorithm |
+| `enabled` | bool | | false | Whether distortion is active |
+
+**Types:**
+- `"soft"` — tanh soft clip, normalized to unity at full drive. Smooth saturation character.
+- `"hard"` — hard clip at `1/drive` threshold. More aggressive, adds odd harmonics.
+
+#### Chorus
+
+| Field | Type | Range | Default | Description |
+|-------|------|-------|---------|-------------|
+| `rate` | float | 0.1 – 10.0 | 1.0 | LFO rate in Hz |
+| `depth` | float | 0.0 – 1.0 | 0.5 | Modulation depth (scales delay sweep range) |
+| `mix` | float | 0.0 – 1.0 | 0.5 | Wet/dry blend |
+| `feedback` | float | 0.0 – 0.95 | 0.0 | Feedback amount — higher values add ring/resonance |
+| `enabled` | bool | | false | Whether chorus is active |
+
+**Notes:**
+- 4 internal voices with evenly-distributed quadrature LFO phases for maximum stereo decorrelation.
+- Base delay center: 7ms. Maximum depth sweep: ±7ms. Keep `feedback` below 0.5 for conventional chorus; higher values approach flanger territory.
+
+#### Phaser
+
+| Field | Type | Range | Default | Description |
+|-------|------|-------|---------|-------------|
+| `stages` | int | 2 – 12 | 4 | Number of allpass stages (more = more notches) |
+| `rate` | float | 0.1 – 10.0 | 0.5 | LFO rate in Hz |
+| `depth` | float | 0.0 – 1.0 | 1.0 | Notch sweep depth |
+| `feedback` | float | 0.0 – 1.0 | 0.5 | Feedback intensity — increases notch prominence |
+| `mix` | float | 0.0 – 1.0 | 0.5 | Wet/dry blend |
+| `enabled` | bool | | false | Whether phaser is active |
+
+**Notes:**
+- L and R channels sweep at 90° phase offset — stereo width is built in.
+- Notch sweep range: 100 Hz – 4000 Hz.
+- Higher `stages` = more notches = more complex comb effect. Classic phaser sounds are 4–6 stages.
+
+#### Delay
+
+| Field | Type | Range | Default | Description |
+|-------|------|-------|---------|-------------|
+| `time` | float | 0.01 – 4.0 | 0.5 | Delay time in seconds — used when `tempoSync` is false |
+| `tempoSync` | bool | | true | When true, time is derived from `bpm` + `subdivision` |
+| `subdivision` | string | see [subdivisions](#subdivisions) | `"1/4"` | Beat fraction used when `tempoSync` is true |
+| `feedback` | float | 0.0 – 0.99 | 0.4 | Feedback amount (approaching 1.0 = infinite repeat) |
+| `damping` | float | 0.0 – 1.0 | 0.0 | LP filter in feedback path — 0 = clean, 1 = HF muted |
+| `hpDamping` | float | 0.0 – 1.0 | 0.0 | HP filter in feedback path — 0 = clean, 1 = LF muted |
+| `pingPong` | bool | | false | Alternates repeats between L and R channels |
+| `mix` | float | 0.0 – 1.0 | 0.5 | Wet/dry blend |
+| `enabled` | bool | | false | Whether delay is active |
+
+**Notes:**
+- Delay time changes are smoothed (20ms time constant) to prevent clicks.
+- `damping` and `hpDamping` can be combined for a bandpass feedback character — useful for dub-style delays that thin out over repeats.
+- Maximum delay time: 4 seconds.
+
+#### Reverb
+
+Dattorro plate reverb algorithm.
+
+| Field | Type | Range | Default | Description |
+|-------|------|-------|---------|-------------|
+| `preDelay` | float | 0.0 – 100.0 | 0.0 | Pre-delay before the reverb in milliseconds |
+| `decay` | float | 0.1 – 20.0 | 4.0 | Reverb tail length in seconds |
+| `damping` | float | 0.0 – 1.0 | 0.5 | LP damping in tank — 0 = bright, 1 = dark/muted HF |
+| `lowDamping` | float | 0.0 – 1.0 | 0.5 | HP damping in tank — 0 = full bass, 1 = thin/muted LF |
+| `diffusion` | float | 0.0 – 1.0 | 0.75 | Input diffusion — higher = smoother attack, lower = grainier |
+| `bandwidth` | float | 0.0 – 1.0 | 0.75 | Input LP pass-through — lower = darker overall reverb |
+| `modRate` | float | 0.01 – 5.0 | 0.5 | Tank LFO rate in Hz — adds shimmer/movement |
+| `modDepth` | float | 0.0 – 1.0 | 0.5 | Tank modulation depth |
+| `mix` | float | 0.0 – 1.0 | 0.3 | Wet/dry blend |
+| `enabled` | bool | | false | Whether reverb is active |
+
+**Notes:**
+- `decay` controls RT60 (time for tail to decay 60dB). Values above 10s produce ambient/drone-style reverbs.
+- `damping` and `lowDamping` act inside the feedback tank — they shape the tail, not the initial attack.
+- `bandwidth` darkens the input signal before the tank, affecting the whole reverb character.
+- High `modDepth` + low `modRate` = lush shimmer. High `modDepth` + high `modRate` = more metallic.
+
+---
 
 ### Voice
 
@@ -371,6 +491,13 @@ Self-modulation is valid (e.g., `osc1.fmSource = "osc1"`) — uses averaged prev
 | `"bp"` | Bandpass — passes frequencies around cutoff |
 | `"notch"` | Notch/band-reject — removes frequencies around cutoff |
 
+### Distortion Types
+
+| String | Description |
+|--------|-------------|
+| `"soft"` | tanh soft clip, normalized to unity gain |
+| `"hard"` | Hard clip at 1/drive threshold |
+
 ### LFO Banks
 
 Same as [wavetable banks](#wavetable-banks), plus:
@@ -381,7 +508,7 @@ Same as [wavetable banks](#wavetable-banks), plus:
 
 ### Subdivisions
 
-Used by LFO `subdivision` (and delay `subdivision` in step 10). Represents a beat fraction where 1.0 beat = one quarter note.
+Used by LFO `subdivision` and delay `subdivision`. Represents a beat fraction where 1.0 beat = one quarter note.
 
 | String | Type | Beats | Description |
 |--------|------|-------|-------------|
@@ -458,7 +585,7 @@ Key tracking is most impactful on presets with low filter cutoffs — without it
 
 ## Annotated Example Preset
 
-A dub techno chord stab with filter envelope sweep and LFO wobble:
+A dub techno chord stab with filter envelope sweep, LFO wobble, and post-mix delay + reverb:
 
 ```json
 {
@@ -468,84 +595,45 @@ A dub techno chord stab with filter envelope sweep and LFO wobble:
     "name": "Dub Techno Stab",
     "author": "",
     "category": "Techno",
-    "description": "Filtered chord stab with slow LFO movement"
+    "description": "Filtered chord stab with slow LFO movement, delay, and reverb"
   },
 
   "oscillators": {
     "osc1": {
-      "bank": "saw",
-      "scanPos": 0.0,
-      "mixLevel": 1.0,
-      "fmDepth": 0.0,
-      "fmRatio": 1.0,
-      "fmSource": "none",
-      "octaveOffset": 0,
-      "detuneAmount": 8.0,
-      "enabled": true
+      "bank": "saw", "scanPos": 0.0, "mixLevel": 1.0,
+      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "octaveOffset": 0, "detuneAmount": 8.0, "enabled": true
     },
     "osc2": {
-      "bank": "saw",
-      "scanPos": 0.0,
-      "mixLevel": 0.8,
-      "fmDepth": 0.0,
-      "fmRatio": 1.0,
-      "fmSource": "none",
-      "octaveOffset": 0,
-      "detuneAmount": -8.0,
-      "enabled": true
+      "bank": "saw", "scanPos": 0.0, "mixLevel": 0.8,
+      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "octaveOffset": 0, "detuneAmount": -8.0, "enabled": true
     },
     "osc3": {
-      "bank": "sine",
-      "scanPos": 0.0,
-      "mixLevel": 0.4,
-      "fmDepth": 0.0,
-      "fmRatio": 1.0,
-      "fmSource": "none",
-      "octaveOffset": -1,
-      "detuneAmount": 0.0,
-      "enabled": true
+      "bank": "sine", "scanPos": 0.0, "mixLevel": 0.4,
+      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "octaveOffset": -1, "detuneAmount": 0.0, "enabled": true
     },
     "osc4": {
-      "bank": "sine",
-      "scanPos": 0.0,
-      "mixLevel": 0.0,
-      "fmDepth": 0.0,
-      "fmRatio": 1.0,
-      "fmSource": "none",
-      "octaveOffset": 0,
-      "detuneAmount": 0.0,
-      "enabled": false
+      "bank": "sine", "scanPos": 0.0, "mixLevel": 0.0,
+      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "octaveOffset": 0, "detuneAmount": 0.0, "enabled": false
     },
     "noise": { "mixLevel": 0.0, "type": "white", "enabled": false }
   },
 
   "envelopes": {
     "ampEnv": {
-      "attackMs": 5.0,
-      "decayMs": 400.0,
-      "sustainLevel": 0.0,
-      "releaseMs": 300.0,
-      "attackCurve": -3.0,
-      "decayCurve": -6.0,
-      "releaseCurve": -5.0
+      "attackMs": 5.0, "decayMs": 400.0, "sustainLevel": 0.0, "releaseMs": 300.0,
+      "attackCurve": -3.0, "decayCurve": -6.0, "releaseCurve": -5.0
     },
     "filterEnv": {
-      "attackMs": 2.0,
-      "decayMs": 500.0,
-      "sustainLevel": 0.1,
-      "releaseMs": 200.0,
-      "attackCurve": -2.0,
-      "decayCurve": -7.0,
-      "releaseCurve": -5.0
+      "attackMs": 2.0, "decayMs": 500.0, "sustainLevel": 0.1, "releaseMs": 200.0,
+      "attackCurve": -2.0, "decayCurve": -7.0, "releaseCurve": -5.0
     },
     "modEnv": {
-      "attackMs": 10.0,
-      "decayMs": 100.0,
-      "sustainLevel": 0.7,
-      "releaseMs": 200.0,
-      "attackCurve": -5.0,
-      "decayCurve": -5.0,
-      "releaseCurve": -5.0
+      "attackMs": 10.0, "decayMs": 100.0, "sustainLevel": 0.7, "releaseMs": 200.0,
+      "attackCurve": -5.0, "decayCurve": -5.0, "releaseCurve": -5.0
     }
   },
 
@@ -567,6 +655,24 @@ A dub techno chord stab with filter envelope sweep and LFO wobble:
 
   "signalChain": ["svf", "ladder", "saturator"],
 
+  "fxChain": ["distortion", "chorus", "delay", "reverb"],
+
+  "fx": {
+    "distortion": { "drive": 1.0, "mix": 1.0, "type": "soft", "enabled": false },
+    "chorus":     { "rate": 0.5, "depth": 0.3, "mix": 0.25, "feedback": 0.0, "enabled": false },
+    "phaser":     { "stages": 4, "rate": 0.5, "depth": 1.0, "feedback": 0.5, "mix": 0.5, "enabled": false },
+    "delay": {
+      "time": 0.5, "tempoSync": true, "subdivision": "1/8",
+      "feedback": 0.45, "damping": 0.35, "hpDamping": 0.1,
+      "pingPong": true, "mix": 0.3, "enabled": true
+    },
+    "reverb": {
+      "preDelay": 15.0, "decay": 3.5, "damping": 0.55, "lowDamping": 0.2,
+      "diffusion": 0.75, "bandwidth": 0.8, "modRate": 0.4, "modDepth": 0.3,
+      "mix": 0.2, "enabled": true
+    }
+  },
+
   "voice": {
     "saturator":  { "drive": 1.5, "mix": 0.4, "enabled": true },
     "pitchBend":  { "range": 2.0 },
@@ -582,7 +688,9 @@ A dub techno chord stab with filter envelope sweep and LFO wobble:
 - Fast attack, medium decay, zero sustain → stab character (notes die out even when held)
 - SVF lowpass at 600 Hz with filter envelope sweeping up ~2.5 octaves → bright attack that closes
 - Slow LFO (0.3 Hz) adding gentle cutoff movement for the dub techno wash
-- Light saturation for warmth (per-voice, pre-filter)
+- Light per-voice saturation for warmth (pre-filter)
+- Ping-pong delay at 1/8 note with damped feedback for depth without clutter
+- Short pre-delayed plate reverb for space without washing out the stab
 
 ---
 
@@ -625,16 +733,16 @@ The init preset is a clean starting point — one sine oscillator, no filters, n
   },
   "envelopes": {
     "ampEnv": {
-      "attackMs": 10.0, "decayMs": 100.0, "sustainLevel": 0.7,
-      "releaseMs": 200.0, "attackCurve": -5.0, "decayCurve": -5.0, "releaseCurve": -5.0
+      "attackMs": 10.0, "decayMs": 100.0, "sustainLevel": 0.7, "releaseMs": 200.0,
+      "attackCurve": -5.0, "decayCurve": -5.0, "releaseCurve": -5.0
     },
     "filterEnv": {
-      "attackMs": 10.0, "decayMs": 100.0, "sustainLevel": 0.7,
-      "releaseMs": 200.0, "attackCurve": -5.0, "decayCurve": -5.0, "releaseCurve": -5.0
+      "attackMs": 10.0, "decayMs": 100.0, "sustainLevel": 0.7, "releaseMs": 200.0,
+      "attackCurve": -5.0, "decayCurve": -5.0, "releaseCurve": -5.0
     },
     "modEnv": {
-      "attackMs": 10.0, "decayMs": 100.0, "sustainLevel": 0.7,
-      "releaseMs": 200.0, "attackCurve": -5.0, "decayCurve": -5.0, "releaseCurve": -5.0
+      "attackMs": 10.0, "decayMs": 100.0, "sustainLevel": 0.7, "releaseMs": 200.0,
+      "attackCurve": -5.0, "decayCurve": -5.0, "releaseCurve": -5.0
     }
   },
   "filters": {
@@ -648,6 +756,14 @@ The init preset is a clean starting point — one sine oscillator, no filters, n
   },
   "modMatrix": [],
   "signalChain": ["svf", "ladder", "saturator"],
+  "fxChain": ["distortion", "chorus", "phaser", "delay", "reverb"],
+  "fx": {
+    "distortion": { "drive": 1.0, "mix": 1.0, "type": "soft", "enabled": false },
+    "chorus":     { "rate": 1.0, "depth": 0.5, "mix": 0.5, "feedback": 0.0, "enabled": false },
+    "phaser":     { "stages": 4, "rate": 0.5, "depth": 1.0, "feedback": 0.5, "mix": 0.5, "enabled": false },
+    "delay":      { "time": 0.5, "tempoSync": true, "subdivision": "1/4", "feedback": 0.4, "damping": 0.0, "hpDamping": 0.0, "pingPong": false, "mix": 0.5, "enabled": false },
+    "reverb":     { "preDelay": 0.0, "decay": 4.0, "damping": 0.5, "lowDamping": 0.5, "diffusion": 0.75, "bandwidth": 0.75, "modRate": 0.5, "modDepth": 0.5, "mix": 0.3, "enabled": false }
+  },
   "voice": {
     "saturator":  { "drive": 1.0, "mix": 1.0, "enabled": false },
     "pitchBend":  { "range": 2.0 },
