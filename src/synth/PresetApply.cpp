@@ -176,7 +176,7 @@ Preset capturePreset(const Engine& engine) {
 
   const lfo::LFO* lfos[] = {&pool.lfo1, &pool.lfo2, &pool.lfo3};
   for (int i = 0; i < NUM_LFOS; i++) {
-    p.lfoBanks[i] = lfos[i]->bank ? banks::parseBankID(lfos[i]->bank->name) : BankID::Sine;
+    p.lfoBanks[i] = lfos[i]->bank ? banks::parseBankID(lfos[i]->bank->name) : BankID::SampleAndHold;
     p.lfoSubdivisions[i] = lfos[i]->subdivision;
   }
 

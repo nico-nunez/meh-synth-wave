@@ -5,7 +5,7 @@
 namespace synth::wavetable::banks {
 using dsp::wavetable::WavetableBank;
 
-enum BankID { Sine = 0, Saw, Square, Triangle, SineToSaw, Unknown, COUNT };
+enum BankID { Sine = 0, Saw, Square, Triangle, SineToSaw, SampleAndHold, Unknown, COUNT };
 inline constexpr const char* UNKNOWN_BANK = "unknown";
 
 void initFactoryBanks();
