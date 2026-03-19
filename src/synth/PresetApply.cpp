@@ -101,6 +101,7 @@ ApplyResult applyPreset(const Preset& preset, Engine& engine) {
   lfo::LFO* lfos[] = {&pool.lfo1, &pool.lfo2, &pool.lfo3};
   for (int i = 0; i < NUM_LFOS; i++) {
     lfos[i]->bank = wavetable::banks::getBankByID(preset.lfoBanks[i]);
+    lfos[i]->subdivision = preset.lfoSubdivisions[i];
   }
 
   // ==== Mod matrix: rebuild from scratch ====
@@ -130,6 +131,13 @@ ApplyResult applyPreset(const Preset& preset, Engine& engine) {
     if (preset.signalChain[i] != signal_chain::SignalProcessor::None)
       pool.signalChain.length++;
   }
+
+  engine.fxChain.delay.subdivision = preset.delaySubdivision;
+
+  // ==== FX chain ordering ====
+  engine.fxChain.length = preset.fxChainLength;
+  for (uint8_t i = 0; i < fx_chain::MAX_EFFECT_SLOTS; i++)
+    engine.fxChain.slots[i] = preset.fxChain[i];
 
   engine.dirtyFlags.markAll();
   param::sync::syncDirtyParams(engine);
@@ -169,6 +177,7 @@ Preset capturePreset(const Engine& engine) {
   const lfo::LFO* lfos[] = {&pool.lfo1, &pool.lfo2, &pool.lfo3};
   for (int i = 0; i < NUM_LFOS; i++) {
     p.lfoBanks[i] = lfos[i]->bank ? banks::parseBankID(lfos[i]->bank->name) : BankID::Sine;
+    p.lfoSubdivisions[i] = lfos[i]->subdivision;
   }
 
   // ==== Mod matrix ====
@@ -185,6 +194,14 @@ Preset capturePreset(const Engine& engine) {
     p.signalChain[i] = i < pool.signalChain.length ? pool.signalChain.slots[i]
                                                    : signal_chain::SignalProcessor::None;
   }
+
+  // ==== FX chain ordering ====
+  p.fxChainLength = engine.fxChain.length;
+  for (uint8_t i = 0; i < fx_chain::MAX_EFFECT_SLOTS; i++)
+    p.fxChain[i] = engine.fxChain.slots[i];
+
+  // ==== Delay subdivision ====
+  p.delaySubdivision = engine.fxChain.delay.subdivision;
 
   return p;
 }

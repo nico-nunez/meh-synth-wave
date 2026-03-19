@@ -92,9 +92,9 @@ struct Preset {
   FXProcessor fxChain[fx_chain::MAX_EFFECT_SLOTS] = {
       FXProcessor::Distortion,
       FXProcessor::Chorus,
-      // FXProcessor::Phaser,
-      // FXProcessor::Delay,
-      // FXProcessor::ReverbPlate,
+      FXProcessor::Phaser,
+      FXProcessor::Delay,
+      FXProcessor::ReverbPlate,
   };
   uint8_t fxChainLength = 5;
 };
