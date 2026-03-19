@@ -24,4 +24,6 @@ float saturate_asymm(float x);
 // Less for protection and requires control of input levels.  Can't be too hot
 float softClipAlt(float x);
 
+float softLimit(float x, float T = 0.9f);
+float fastSoftLimit(float x, float T = 0.9f);
 } // namespace dsp::waveshaper

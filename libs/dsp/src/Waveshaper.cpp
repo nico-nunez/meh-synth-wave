@@ -6,6 +6,30 @@
 #include <cmath>
 
 namespace dsp::waveshaper {
+// Linear below T, soft knee above — no harmonic distortion in normal operation
+float softLimit(float x, float T) {
+  float ax = fabsf(x);
+  if (ax <= T)
+    return x;
+  // Soft knee from T to 1.0
+  float excess = ax - T;
+  float knee = T + (1.0f - T) * tanhf(excess / (1.0f - T));
+  return std::copysignf(knee, x);
+}
+
+// Linear below T, soft knee above — no harmonic distortion in normal operation
+float fastSoftLimit(float x, float T) {
+  float ax = fabsf(x);
+  if (ax <= T)
+    return x;
+  // Soft knee from T to 1.0
+  float excess = ax - T;
+  float range = 1.0f - T;
+  float t = excess / range;                  // normalize to [0, inf)
+  float knee = T + range * (t / (1.0f + t)); // Padé-style, hard limits at 1.0 asymptotically
+  return std::copysignf(knee, x);
+}
+
 // Denormalized drive and invDrive
 // mix expected to be normalized [0,1]
 float softClip(float sample, float drive, float invDrive, float mix) {

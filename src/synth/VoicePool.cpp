@@ -12,10 +12,12 @@
 #include "dsp/Buffers.h"
 #include "dsp/Filters.h"
 #include "dsp/Math.h"
+#include "dsp/Waveshaper.h"
 #include "dsp/Wavetable.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 
 namespace synth::voices {
 using mod_matrix::ModDest;
@@ -792,8 +794,8 @@ void processVoices(VoicePool& pool, StereoBuffer output, size_t numSamples, floa
 
     // TODO(nico): Basic soft clip for now.
     // Mainly for protection and not as an effect
-    output.left[sIndex] = dsp::math::fastTanh(sampleL * pool.masterGain);
-    output.right[sIndex] = dsp::math::fastTanh(sampleR * pool.masterGain);
+    output.left[sIndex] = dsp::waveshaper::softLimit(sampleL * pool.masterGain);
+    output.right[sIndex] = dsp::waveshaper::softLimit(sampleR * pool.masterGain);
   }
 
   // Advance pitch interpolation state for next block
