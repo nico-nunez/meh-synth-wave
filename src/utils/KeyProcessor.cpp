@@ -81,11 +81,14 @@ static void keyEventCallback(device_io::KeyEvent event, void* userContext) {
 
     // Note "OFF" event
   } else if (event.type == device_io::KeyEventType::KeyUp) {
-    uint8_t note = asciiToMidi(event.character);
 
     // Currently 'z' & 'x' control octive up/down
     // Need to ignore keyup (note off) for now
-    if (event.character == 120 || event.character == 122 || note == 0)
+    if (event.character == 120 || event.character == 122)
+      return;
+
+    uint8_t note = asciiToMidi(event.character);
+    if (note == 0)
       return;
 
     s_io::MIDIEvent midiEvent{};
