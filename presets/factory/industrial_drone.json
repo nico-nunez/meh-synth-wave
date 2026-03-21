@@ -8,72 +8,240 @@
   },
   "oscillators": {
     "osc1": {
-      "bank": "saw", "scanPos": 0.0, "mixLevel": 1.0,
-      "fmDepth": 0.8, "fmRatio": 1.0, "fmSource": "osc1",
-      "octaveOffset": -1, "detuneAmount": 3.0, "enabled": true
+      "bank": "saw",
+      "scanPos": 0.0,
+      "mixLevel": 1.0,
+      "octaveOffset": -1,
+      "detuneAmount": 3.0,
+      "fmDepth": 0.8,
+      "ratio": 1.0,
+      "fixed": false,
+      "fixedFreq": 440.0,
+      "fmSource": "osc1",
+      "enabled": true
     },
     "osc2": {
-      "bank": "square", "scanPos": 0.0, "mixLevel": 0.7,
-      "fmDepth": 1.2, "fmRatio": 3.0, "fmSource": "osc1",
-      "octaveOffset": 0, "detuneAmount": -5.0, "enabled": true
+      "bank": "square",
+      "scanPos": 0.0,
+      "mixLevel": 0.7,
+      "octaveOffset": 0,
+      "detuneAmount": -5.0,
+      "fmDepth": 1.2,
+      "ratio": 3.0,
+      "fixed": false,
+      "fixedFreq": 440.0,
+      "fmSource": "osc1",
+      "enabled": true
     },
     "osc3": {
-      "bank": "saw", "scanPos": 0.0, "mixLevel": 0.5,
-      "fmDepth": 0.4, "fmRatio": 5.0, "fmSource": "osc3",
-      "octaveOffset": 1, "detuneAmount": 11.0, "enabled": true
+      "bank": "saw",
+      "scanPos": 0.0,
+      "mixLevel": 0.5,
+      "octaveOffset": 1,
+      "detuneAmount": 11.0,
+      "fmDepth": 0.4,
+      "ratio": 5.0,
+      "fixed": false,
+      "fixedFreq": 440.0,
+      "fmSource": "osc3",
+      "enabled": true
     },
     "osc4": {
-      "bank": "sine", "scanPos": 0.0, "mixLevel": 0.6,
-      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
-      "octaveOffset": -2, "detuneAmount": 0.0, "enabled": true
+      "bank": "sine",
+      "scanPos": 0.0,
+      "mixLevel": 0.6,
+      "octaveOffset": -2,
+      "detuneAmount": 0.0,
+      "fmDepth": 0.0,
+      "ratio": 1.0,
+      "fixed": false,
+      "fixedFreq": 440.0,
+      "fmSource": "none",
+      "enabled": true
     },
-    "noise": { "mixLevel": 0.15, "type": "white", "enabled": true }
+    "noise": {
+      "mixLevel": 0.15,
+      "type": "white",
+      "enabled": true
+    }
   },
   "envelopes": {
     "ampEnv": {
-      "attackMs": 500.0, "decayMs": 500.0, "sustainLevel": 1.0,
-      "releaseMs": 2000.0, "attackCurve": -3.0, "decayCurve": -3.0, "releaseCurve": -4.0
+      "attackMs": 500.0,
+      "decayMs": 500.0,
+      "sustainLevel": 1.0,
+      "releaseMs": 2000.0,
+      "attackCurve": -3.0,
+      "decayCurve": -3.0,
+      "releaseCurve": -4.0
     },
     "filterEnv": {
-      "attackMs": 2000.0, "decayMs": 3000.0, "sustainLevel": 0.3,
-      "releaseMs": 2000.0, "attackCurve": -2.0, "decayCurve": -3.0, "releaseCurve": -4.0
+      "attackMs": 2000.0,
+      "decayMs": 3000.0,
+      "sustainLevel": 0.3,
+      "releaseMs": 2000.0,
+      "attackCurve": -2.0,
+      "decayCurve": -3.0,
+      "releaseCurve": -4.0
     },
     "modEnv": {
-      "attackMs": 3000.0, "decayMs": 5000.0, "sustainLevel": 0.5,
-      "releaseMs": 3000.0, "attackCurve": -2.0, "decayCurve": -3.0, "releaseCurve": -3.0
+      "attackMs": 3000.0,
+      "decayMs": 5000.0,
+      "sustainLevel": 0.5,
+      "releaseMs": 3000.0,
+      "attackCurve": -2.0,
+      "decayCurve": -3.0,
+      "releaseCurve": -3.0
     }
   },
   "filters": {
-    "svf": { "mode": "lp", "cutoff": 2000.0, "resonance": 0.4, "enabled": true },
-    "ladder": { "cutoff": 1000.0, "resonance": 0.3, "drive": 1.0, "enabled": false }
+    "svf": {
+      "mode": "lp",
+      "cutoff": 2000.0,
+      "resonance": 0.4,
+      "enabled": true
+    },
+    "ladder": {
+      "cutoff": 1000.0,
+      "resonance": 0.3,
+      "drive": 1.0,
+      "enabled": false
+    }
   },
   "bpm": 120.0,
   "lfos": {
-    "lfo1": { "bank": "sine", "rate": 0.1, "amplitude": 0.8, "retrigger": false, "tempoSync": false, "subdivision": "1/4" },
-    "lfo2": { "bank": "triangle", "rate": 0.05, "amplitude": 0.6, "retrigger": false, "tempoSync": false, "subdivision": "1/4" },
-    "lfo3": { "bank": "sah", "rate": 0.4, "amplitude": 0.5, "retrigger": false, "tempoSync": false, "subdivision": "1/4" }
+    "lfo1": {
+      "bank": "sine",
+      "rate": 0.1,
+      "amplitude": 0.8,
+      "retrigger": false,
+      "tempoSync": false,
+      "subdivision": "1/4"
+    },
+    "lfo2": {
+      "bank": "triangle",
+      "rate": 0.05,
+      "amplitude": 0.6,
+      "retrigger": false,
+      "tempoSync": false,
+      "subdivision": "1/4"
+    },
+    "lfo3": {
+      "bank": "sah",
+      "rate": 0.4,
+      "amplitude": 0.5,
+      "retrigger": false,
+      "tempoSync": false,
+      "subdivision": "1/4"
+    }
   },
   "modMatrix": [
-    { "source": "filterEnv", "destination": "svf.cutoff", "amount": 1.5 },
-    { "source": "lfo1", "destination": "svf.cutoff", "amount": 0.6 },
-    { "source": "lfo2", "destination": "osc1.fmDepth", "amount": 0.5 },
-    { "source": "lfo3", "destination": "osc2.fmDepth", "amount": 0.8 },
-    { "source": "modEnv", "destination": "osc3.fmDepth", "amount": 1.0 }
+    {
+      "source": "filterEnv",
+      "destination": "svf.cutoff",
+      "amount": 1.5
+    },
+    {
+      "source": "lfo1",
+      "destination": "svf.cutoff",
+      "amount": 0.6
+    },
+    {
+      "source": "lfo2",
+      "destination": "osc1.fmDepth",
+      "amount": 0.5
+    },
+    {
+      "source": "lfo3",
+      "destination": "osc2.fmDepth",
+      "amount": 0.8
+    },
+    {
+      "source": "modEnv",
+      "destination": "osc3.fmDepth",
+      "amount": 1.0
+    }
   ],
-  "signalChain": ["saturator", "svf"],
-  "fxChain": ["distortion", "chorus", "phaser", "delay", "reverb"],
+  "signalChain": [
+    "saturator",
+    "svf"
+  ],
+  "fxChain": [
+    "distortion",
+    "chorus",
+    "phaser",
+    "delay",
+    "reverb"
+  ],
   "fx": {
-    "distortion": { "drive": 3.0, "mix": 0.4, "type": "soft", "enabled": true },
-    "chorus":     { "rate": 1.0, "depth": 0.5, "mix": 0.5, "feedback": 0.0, "enabled": false },
-    "phaser":     { "stages": 8, "rate": 0.1, "depth": 0.6, "feedback": 0.4, "mix": 0.25, "enabled": true },
-    "delay":      { "time": 0.5, "tempoSync": true, "subdivision": "d1/2", "feedback": 0.55, "damping": 0.65, "hpDamping": 0.0, "pingPong": false, "mix": 0.2, "enabled": true },
-    "reverb":     { "preDelay": 5.0, "decay": 9.0, "damping": 0.6, "lowDamping": 0.1, "diffusion": 0.7, "bandwidth": 0.65, "modRate": 0.15, "modDepth": 0.5, "mix": 0.4, "enabled": true }
+    "distortion": {
+      "drive": 3.0,
+      "mix": 0.4,
+      "type": "soft",
+      "enabled": true
+    },
+    "chorus": {
+      "rate": 1.0,
+      "depth": 0.5,
+      "mix": 0.5,
+      "feedback": 0.0,
+      "enabled": false
+    },
+    "phaser": {
+      "stages": 8,
+      "rate": 0.1,
+      "depth": 0.6,
+      "feedback": 0.4,
+      "mix": 0.25,
+      "enabled": true
+    },
+    "delay": {
+      "time": 0.5,
+      "tempoSync": true,
+      "subdivision": "d1/2",
+      "feedback": 0.55,
+      "damping": 0.65,
+      "hpDamping": 0.0,
+      "pingPong": false,
+      "mix": 0.2,
+      "enabled": true
+    },
+    "reverb": {
+      "preDelay": 5.0,
+      "decay": 9.0,
+      "damping": 0.6,
+      "lowDamping": 0.1,
+      "diffusion": 0.7,
+      "bandwidth": 0.65,
+      "modRate": 0.15,
+      "modDepth": 0.5,
+      "mix": 0.4,
+      "enabled": true
+    }
   },
   "voice": {
-    "saturator": { "drive": 3.5, "mix": 0.7, "enabled": true },
-    "mono": { "enabled": false, "legato": true },
-    "portamento": { "time": 50.0, "legato": true, "enabled": false },
-    "unison": { "voices": 3, "detune": 30.0, "spread": 0.8, "enabled": true },
-    "pitchBend": { "range": 2.0 }
+    "saturator": {
+      "drive": 3.5,
+      "mix": 0.7,
+      "enabled": true
+    },
+    "mono": {
+      "enabled": false,
+      "legato": true
+    },
+    "portamento": {
+      "time": 50.0,
+      "legato": true,
+      "enabled": false
+    },
+    "unison": {
+      "voices": 3,
+      "detune": 30.0,
+      "spread": 0.8,
+      "enabled": true
+    },
+    "pitchBend": {
+      "range": 2.0
+    }
   }
 }

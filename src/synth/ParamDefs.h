@@ -12,7 +12,9 @@
   X(OSC1_OCTAVE, "osc1.octaveOffset", Int8, -2.0f, 2.0f, 0.0f, None)                               \
   X(OSC1_SCAN_POS, "osc1.scanPos", Float, 0.0f, 1.0f, 0.0f, None)                                  \
   X(OSC1_FM_DEPTH, "osc1.fmDepth", Float, 0.0f, 5.0f, 0.0f, None)                                  \
-  X(OSC1_FM_RATIO, "osc1.fmRatio", Float, 0.5f, 16.0f, 1.0f, None)                                 \
+  X(OSC1_RATIO, "osc1.ratio", Float, 0.5f, 16.0f, 1.0f, None)                                      \
+  X(OSC1_FIXED, "osc1.fixed", Bool, 0.0f, 1.0f, 0.0f, None)                                        \
+  X(OSC1_FIXED_FREQ, "osc1.fixedFreq", Float, 20.0f, 8000.0f, 440.0f, OscFreqFixed)                \
   X(OSC1_ENABLED, "osc1.enabled", Bool, 0.0f, 1.0f, 1.0f, OscEnable)                               \
                                                                                                    \
   X(OSC2_MIX_LEVEL, "osc2.mixLevel", Float, 0.0f, 4.0f, 1.0f, None)                                \
@@ -20,7 +22,9 @@
   X(OSC2_OCTAVE, "osc2.octaveOffset", Int8, -2.0f, 2.0f, 0.0f, None)                               \
   X(OSC2_SCAN_POS, "osc2.scanPos", Float, 0.0f, 1.0f, 0.0f, None)                                  \
   X(OSC2_FM_DEPTH, "osc2.fmDepth", Float, 0.0f, 5.0f, 0.0f, None)                                  \
-  X(OSC2_FM_RATIO, "osc2.fmRatio", Float, 0.5f, 16.0f, 1.0f, None)                                 \
+  X(OSC2_RATIO, "osc2.ratio", Float, 0.5f, 16.0f, 1.0f, None)                                      \
+  X(OSC2_FIXED, "osc2.fixed", Bool, 0.0f, 1.0f, 0.0f, None)                                        \
+  X(OSC2_FIXED_FREQ, "osc2.fixedFreq", Float, 20.0f, 8000.0f, 440.0f, OscFreqFixed)                \
   X(OSC2_ENABLED, "osc2.enabled", Bool, 0.0f, 1.0f, 0.0f, OscEnable)                               \
                                                                                                    \
   X(OSC3_MIX_LEVEL, "osc3.mixLevel", Float, 0.0f, 4.0f, 1.0f, None)                                \
@@ -28,7 +32,9 @@
   X(OSC3_OCTAVE, "osc3.octaveOffset", Int8, -2.0f, 2.0f, 0.0f, None)                               \
   X(OSC3_SCAN_POS, "osc3.scanPos", Float, 0.0f, 1.0f, 0.0f, None)                                  \
   X(OSC3_FM_DEPTH, "osc3.fmDepth", Float, 0.0f, 5.0f, 0.0f, None)                                  \
-  X(OSC3_FM_RATIO, "osc3.fmRatio", Float, 0.5f, 16.0f, 1.0f, None)                                 \
+  X(OSC3_RATIO, "osc3.ratio", Float, 0.5f, 16.0f, 1.0f, None)                                      \
+  X(OSC3_FIXED, "osc3.fixed", Bool, 0.0f, 1.0f, 0.0f, None)                                        \
+  X(OSC3_FIXED_FREQ, "osc3.fixedFreq", Float, 20.0f, 8000.0f, 440.0f, OscFreqFixed)                \
   X(OSC3_ENABLED, "osc3.enabled", Bool, 0.0f, 1.0f, 0.0f, OscEnable)                               \
                                                                                                    \
   X(OSC4_MIX_LEVEL, "osc4.mixLevel", Float, 0.0f, 4.0f, 1.0f, None)                                \
@@ -36,7 +42,9 @@
   X(OSC4_OCTAVE, "osc4.octaveOffset", Int8, -2.0f, 2.0f, 0.0f, None)                               \
   X(OSC4_SCAN_POS, "osc4.scanPos", Float, 0.0f, 1.0f, 0.0f, None)                                  \
   X(OSC4_FM_DEPTH, "osc4.fmDepth", Float, 0.0f, 5.0f, 0.0f, None)                                  \
-  X(OSC4_FM_RATIO, "osc4.fmRatio", Float, 0.5f, 16.0f, 1.0f, None)                                 \
+  X(OSC4_RATIO, "osc4.ratio", Float, 0.5f, 16.0f, 1.0f, None)                                      \
+  X(OSC4_FIXED, "osc4.fixed", Bool, 0.0f, 1.0f, 0.0f, None)                                        \
+  X(OSC4_FIXED_FREQ, "osc4.fixedFreq", Float, 20.0f, 8000.0f, 440.0f, OscFreqFixed)                \
   X(OSC4_ENABLED, "osc4.enabled", Bool, 0.0f, 1.0f, 0.0f, OscEnable)                               \
                                                                                                    \
   /* ==== Noise ==== */                                                                            \
@@ -172,6 +180,8 @@ namespace synth::param {
 // ===================
 enum UpdateGroup {
   None = 0,
+
+  OscFreqFixed,     // recalc fixedPhaseInc = fixedFreqHz / sampleRate
   OscEnable,        // recalc oscMixGain
                     //
   EnvTime,          // recalc envelope increments (needs sampleRate)

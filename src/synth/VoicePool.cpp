@@ -473,11 +473,16 @@ float interpolatePitchInc(const WavetableOsc& osc,
   const uint32_t s = sampleIndex;
 
   float pitchMod = matrix.prevDestValues[dest][v] +
-                   (matrix.destStepValues[dest][v] * static_cast<float>(s)) + lfoContribs[dest] +
-                   semitoneBend + portaOffsets[v];
+                   (matrix.destStepValues[dest][v] * static_cast<float>(s)) + lfoContribs[dest];
 
-  // Calculate and return modulated phase increment
-  return osc.phaseIncrements[v] * dsp::math::semitonesToFreqRatio(pitchMod) * osc.fmRatio;
+  if (osc.fixed) {
+    // Fixed base: decoupled from keyboard pitch, portamento, and pitch bend.
+    return osc.fixedPhaseInc * dsp::math::semitonesToFreqRatio(pitchMod);
+  }
+
+  pitchMod += semitoneBend + portaOffsets[v];
+
+  return osc.phaseIncrements[v] * dsp::math::semitonesToFreqRatio(pitchMod) * osc.ratio;
 }
 
 // Shared oscillator parameters — computed once, used by both mono and unison paths

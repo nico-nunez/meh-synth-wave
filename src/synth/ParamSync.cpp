@@ -5,6 +5,7 @@
 #include "synth/Envelope.h"
 #include "synth/FXChain.h"
 #include "synth/Filters.h"
+#include "synth/ParamDefs.h"
 #include "synth/Saturator.h"
 #include "synth/Unison.h"
 #include "synth/VoicePool.h"
@@ -30,6 +31,13 @@ void updateOscMixGain(VoicePool& pool) {
   int count = pool.osc1.enabled + pool.osc2.enabled + pool.osc3.enabled + pool.osc4.enabled +
               pool.noise.enabled;
   pool.oscMixGain = (count > 0) ? 1.0f / static_cast<float>(count) : 1.0f;
+}
+
+void updateOscFixedPhaseIncs(VoicePool& pool, float invSampleRate) {
+  pool.osc1.fixedPhaseInc = pool.osc1.fixedFreq * invSampleRate;
+  pool.osc2.fixedPhaseInc = pool.osc2.fixedFreq * invSampleRate;
+  pool.osc3.fixedPhaseInc = pool.osc3.fixedFreq * invSampleRate;
+  pool.osc4.fixedPhaseInc = pool.osc4.fixedFreq * invSampleRate;
 }
 
 void updateAllEnvIncrements(VoicePool& pool, const float sampleRate) {
@@ -143,6 +151,8 @@ void syncDirtyParams(Engine& engine) {
   // ==== Oscillators ====
   if (flags.isSet(UpdateGroup::OscEnable))
     updateOscMixGain(pool);
+  if (flags.isSet(UpdateGroup::OscFreqFixed))
+    updateOscFixedPhaseIncs(pool, invSampleRate);
 
   // ==== Envelopes ====
   if (flags.isSet(UpdateGroup::EnvTime))

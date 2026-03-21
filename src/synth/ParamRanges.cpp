@@ -23,8 +23,8 @@ float clampOctave(int8_t octaveOffset) {
 float clampFMDepth(float fmDepth) {
   return std::clamp(fmDepth, FM_DEPTH_MIN, FM_DEPTH_MAX);
 }
-float clampFMRatio(float fmRatio) {
-  return std::clamp(fmRatio, FM_RATIO_MIN, FM_RATIO_MAX);
+float clampFMRatio(float ratio) {
+  return std::clamp(ratio, RATIO_MIN, RATIO_MAX);
 }
 
 namespace noise {

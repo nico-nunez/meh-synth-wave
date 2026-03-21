@@ -26,13 +26,20 @@ struct WavetableOsc {
 
   // ==== Global settings for all voices in oscillator ====
   const WavetableBank* bank = nullptr;
-  float scanPos = 0.0f;
   float mixLevel = 1.0f;
-  float fmDepth = 0.0f;
-  float fmRatio = 1.0f;
-  FMSource fmSource = FMSource::None;
   int8_t octaveOffset = 0;
   float detuneAmount = 0.0f;
+
+  float scanPos = 0.0f;
+
+  float fmDepth = 0.0f;
+  float ratio = 1.0f;
+  bool fixed = false; // false == ratio | true == fixedFreq
+  float fixedFreq = 440.0f;
+  float fixedPhaseInc = 0.0f; // fixedFreq / sampleRate
+
+  FMSource fmSource = FMSource::None;
+
   bool enabled = true;
 };
 

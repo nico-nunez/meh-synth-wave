@@ -150,7 +150,9 @@ Each oscillator (osc1–osc4) has the same fields:
 | `scanPos` | float | 0.0 – 1.0 | 0.0 | Position within the wavetable (frame interpolation) |
 | `mixLevel` | float | 0.0 – 4.0 | 1.0 | Output level (>1.0 overdrives into chain) |
 | `fmDepth` | float | 0.0 – 5.0 | 0.0 | FM modulation intensity from the FM source |
-| `fmRatio` | float | 0.5 – 16.0 | 1.0 | Frequency multiplier (carrier:modulator ratio) |
+| `ratio` | float | 0.5 – 16.0 | 1.0 | Frequency multiplier (carrier:modulator ratio) |
+| `fixed` | bool | | false | Fixed frequency mode |
+| `fixedFreq` | float | 20.0 - 8000.0 | 440.0 | Fixed frequency value |
 | `fmSource` | string | see [FM sources](#fm-sources) | `"none"` | Which oscillator modulates this one's phase |
 | `octaveOffset` | int | -2 – 2 | 0 | Octave transpose in semitone steps of 12 |
 | `detuneAmount` | float | -100.0 – 100.0 | 0.0 | Pitch offset in cents |
@@ -159,7 +161,7 @@ Each oscillator (osc1–osc4) has the same fields:
 **Notes:**
 - `mixLevel` feeds into the signal chain. Values above 1.0 can overdrive filters/saturator for harmonic content.
 - `scanPos` only matters for multi-frame banks (currently only `sine_to_saw`). For single-frame banks (sine, saw, square, triangle), `scanPos` has no audible effect.
-- `fmRatio` multiplies the oscillator's frequency. At ratio 2.0, the oscillator runs an octave above its MIDI pitch. This is applied before FM modulation — it determines the carrier or modulator frequency relationship.
+- `ratio` multiplies the oscillator's frequency. At ratio 2.0, the oscillator runs an octave above its MIDI pitch. This is applied before FM modulation — it determines the carrier or modulator frequency relationship.
 - Mix gain is auto-normalized: `1.0 / enabledOscCount`. If only osc1 is enabled, it gets full level. If all 4 are enabled, each gets 0.25x before the per-voice gain stage.
 
 ### Noise
@@ -601,22 +603,22 @@ A dub techno chord stab with filter envelope sweep, LFO wobble, and post-mix del
   "oscillators": {
     "osc1": {
       "bank": "saw", "scanPos": 0.0, "mixLevel": 1.0,
-      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "fmDepth": 0.0, "ratio": 1.0, "fmSource": "none",
       "octaveOffset": 0, "detuneAmount": 8.0, "enabled": true
     },
     "osc2": {
       "bank": "saw", "scanPos": 0.0, "mixLevel": 0.8,
-      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "fmDepth": 0.0, "ratio": 1.0, "fmSource": "none",
       "octaveOffset": 0, "detuneAmount": -8.0, "enabled": true
     },
     "osc3": {
       "bank": "sine", "scanPos": 0.0, "mixLevel": 0.4,
-      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "fmDepth": 0.0, "ratio": 1.0, "fmSource": "none",
       "octaveOffset": -1, "detuneAmount": 0.0, "enabled": true
     },
     "osc4": {
       "bank": "sine", "scanPos": 0.0, "mixLevel": 0.0,
-      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "fmDepth": 0.0, "ratio": 1.0, "fmSource": "none",
       "octaveOffset": 0, "detuneAmount": 0.0, "enabled": false
     },
     "noise": { "mixLevel": 0.0, "type": "white", "enabled": false }
@@ -711,22 +713,22 @@ The init preset is a clean starting point — one sine oscillator, no filters, n
   "oscillators": {
     "osc1": {
       "bank": "sine", "scanPos": 0.0, "mixLevel": 1.0,
-      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "fmDepth": 0.0, "ratio": 1.0, "fmSource": "none",
       "octaveOffset": 0, "detuneAmount": 0.0, "enabled": true
     },
     "osc2": {
       "bank": "sine", "scanPos": 0.0, "mixLevel": 0.0,
-      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "fmDepth": 0.0, "ratio": 1.0, "fmSource": "none",
       "octaveOffset": 0, "detuneAmount": 0.0, "enabled": false
     },
     "osc3": {
       "bank": "sine", "scanPos": 0.0, "mixLevel": 0.0,
-      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "fmDepth": 0.0, "ratio": 1.0, "fmSource": "none",
       "octaveOffset": 0, "detuneAmount": 0.0, "enabled": false
     },
     "osc4": {
       "bank": "sine", "scanPos": 0.0, "mixLevel": 0.0,
-      "fmDepth": 0.0, "fmRatio": 1.0, "fmSource": "none",
+      "fmDepth": 0.0, "ratio": 1.0, "fmSource": "none",
       "octaveOffset": 0, "detuneAmount": 0.0, "enabled": false
     },
     "noise": { "mixLevel": 0.0, "type": "white", "enabled": false }

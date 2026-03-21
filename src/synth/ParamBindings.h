@@ -30,7 +30,7 @@ struct ParamRouter {
 };
 
 struct OscParamIDs {
-  ParamID mixLevel, detune, octave, scanPos, fmDepth, fmRatio, enabled;
+  ParamID mixLevel, detune, octave, scanPos, fmDepth, ratio, fixed, fixedFreq, enabled;
 };
 
 struct EnvParamIDs {
@@ -48,7 +48,9 @@ inline constexpr OscParamIDs OSC_PARAM_IDS[4] = {
      OSC1_OCTAVE,
      OSC1_SCAN_POS,
      OSC1_FM_DEPTH,
-     OSC1_FM_RATIO,
+     OSC1_RATIO,
+     OSC1_FIXED,
+     OSC1_FIXED_FREQ,
      OSC1_ENABLED},
 
     {OSC2_MIX_LEVEL,
@@ -56,7 +58,9 @@ inline constexpr OscParamIDs OSC_PARAM_IDS[4] = {
      OSC2_OCTAVE,
      OSC2_SCAN_POS,
      OSC2_FM_DEPTH,
-     OSC2_FM_RATIO,
+     OSC2_RATIO,
+     OSC2_FIXED,
+     OSC2_FIXED_FREQ,
      OSC2_ENABLED},
 
     {OSC3_MIX_LEVEL,
@@ -64,7 +68,9 @@ inline constexpr OscParamIDs OSC_PARAM_IDS[4] = {
      OSC3_OCTAVE,
      OSC3_SCAN_POS,
      OSC3_FM_DEPTH,
-     OSC3_FM_RATIO,
+     OSC3_RATIO,
+     OSC3_FIXED,
+     OSC3_FIXED_FREQ,
      OSC3_ENABLED},
 
     {OSC4_MIX_LEVEL,
@@ -72,7 +78,9 @@ inline constexpr OscParamIDs OSC_PARAM_IDS[4] = {
      OSC4_OCTAVE,
      OSC4_SCAN_POS,
      OSC4_FM_DEPTH,
-     OSC4_FM_RATIO,
+     OSC4_RATIO,
+     OSC4_FIXED,
+     OSC4_FIXED_FREQ,
      OSC4_ENABLED},
 };
 
