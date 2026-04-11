@@ -1,5 +1,7 @@
 #pragma once
 
+#include "app/Transport.h"
+
 #include "synth/events/EventQueues.h"
 #include "synth/events/Events.h"
 
@@ -13,6 +15,8 @@ using synth::events::MIDIEvent;
 using synth::events::MIDIEventQueue;
 using synth::events::ParamEvent;
 using synth::events::ParamEventQueue;
+
+using transport::TransportAction;
 
 struct SynthSession;
 using hSynthSession = SynthSession*;
@@ -42,6 +46,7 @@ struct SessionConfig {
   BufferFormat bufferFormat = BufferFormat::NonInterleaved;
 };
 
+typedef void (*TransportActionHandler)(TransportAction action, void* userContext);
 typedef void (*MIDIEventHandler)(MIDIEvent midiEvent, void* userContext);
 typedef void (*ParamEventHandler)(ParamEvent paramEvent, void* userContext);
 typedef void (*EngineEventHandler)(EngineEvent event, void* userContext);
@@ -52,6 +57,7 @@ typedef void (*AudioBufferHandler)(float** outputBuffer,
                                    void* userContext);
 
 struct SynthCallbacks {
+  TransportActionHandler processTransportAction = nullptr;
   MIDIEventHandler processMIDIEvent = nullptr;
   ParamEventHandler processParamEvent = nullptr;
   EngineEventHandler processEngineEvent = nullptr;
@@ -68,6 +74,7 @@ int stopSession(hSynthSession sessionPtr);
 int disposeSession(hSynthSession sessionPtr);
 
 // ==== Event Handlers ====
+bool pushTransportAction(hSynthSession sessionPtr, TransportAction action);
 bool pushMIDIEvent(hSynthSession sessionPtr, MIDIEvent evt);
 bool pushParamEvent(hSynthSession sessionPtr, ParamEvent evt);
 bool pushEngineEvent(hSynthSession sessionPtr, EngineEvent evt);

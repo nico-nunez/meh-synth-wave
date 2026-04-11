@@ -10,6 +10,8 @@ namespace app::session {
 using AudioBuffer = audio_io::AudioBuffer;
 using hAudioSession = audio_io::hAudioSession;
 
+using transport::TransportActionQueue;
+
 // ==========================
 // Audio Device Negotiation
 // ==========================
@@ -24,15 +26,16 @@ DeviceInfo queryDefaultDevice() {
 // =============================
 
 struct SynthSession {
+  TransportActionQueue transportActionQueue{};
   MIDIEventQueue midiEventQueue{};
   ParamEventQueue paramEventQueue{};
   EngineEventQueue engineEventQueue{};
 
-  AudioBufferHandler processAudioBlock;
-
+  TransportActionHandler processTransportAction = nullptr;
   MIDIEventHandler processMIDIEvent;
   ParamEventHandler processParamEvent;
   EngineEventHandler processEngineEvent;
+  AudioBufferHandler processAudioBlock;
 
   hAudioSession audioSession;
   void* userContext;
@@ -40,6 +43,13 @@ struct SynthSession {
 
 static void audioCallback(AudioBuffer buffer, void* context) {
   auto* ctx = static_cast<SynthSession*>(context);
+
+  // Drain Transport Actions
+  if (ctx->processTransportAction) {
+    TransportAction action;
+    while (ctx->transportActionQueue.pop(action))
+      ctx->processTransportAction(action, ctx->userContext);
+  }
 
   // Drain MIDI Events
   if (ctx->processMIDIEvent) {
@@ -79,10 +89,11 @@ hSynthSession initSession(SessionConfig userConfig,
                           void* userContext) {
 
   hSynthSession sessionPtr = new SynthSession();
-  sessionPtr->processParamEvent = userCallbacks.processParamEvent;
+  sessionPtr->processTransportAction = userCallbacks.processTransportAction;
   sessionPtr->processMIDIEvent = userCallbacks.processMIDIEvent;
-  sessionPtr->processAudioBlock = userCallbacks.processAudioBlock;
+  sessionPtr->processParamEvent = userCallbacks.processParamEvent;
   sessionPtr->processEngineEvent = userCallbacks.processEngineEvent;
+  sessionPtr->processAudioBlock = userCallbacks.processAudioBlock;
   sessionPtr->userContext = userContext;
 
   // 2. Setup audio_io
@@ -119,6 +130,10 @@ int disposeSession(hSynthSession sessionPtr) {
 
 // ==== Event Handlers ====
 // TODO(nico): replicate emplace_back() to reduce copy;
+
+bool pushTransportAction(hSynthSession sessionPtr, TransportAction action) {
+  return sessionPtr->transportActionQueue.push(action);
+}
 
 bool pushMIDIEvent(hSynthSession sessionPtr, MIDIEvent evt) {
   return sessionPtr->midiEventQueue.push(evt);
